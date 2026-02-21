@@ -1,3 +1,177 @@
 export function homePage() {
-    return `<h1>Home Page</h1>`;
+    return `
+<div class="pjsk-container">
+    <!-- 分类栏 -->
+    <div class="category-bar">
+        <div class="category-item">全部</div>
+        <div class="category-item">其他</div>
+        <div class="category-item">♦</div>
+        <div class="category-item">👑</div>
+        <div class="category-item active">🎵</div>
+        <div class="category-item">♣</div>
+        <div class="category-item">⭐</div>
+        <div class="category-item">🎶</div>
+    </div>
+    
+    <!-- 歌曲网格 -->
+    <div class="song-grid">
+        <div class="song-card selected">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk1/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">24</div>
+            <div class="song-tags">
+                <span class="song-tag">3D</span>
+            </div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk2/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">25</div>
+            <div class="song-tags">
+                <span class="song-tag">原曲</span>
+            </div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk3/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">26</div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk4/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">23</div>
+            <div class="song-tags">
+                <span class="song-tag">2D</span>
+            </div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk5/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">24</div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk6/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">27</div>
+            <div class="song-tags">
+                <span class="song-tag">3D</span>
+            </div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk7/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">25</div>
+        </div>
+        
+        <div class="song-card">
+            <img class="song-cover" src="https://picsum.photos/seed/pjsk8/300/200" alt="cover">
+            <div class="difficulty-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="song-level">26</div>
+            <div class="song-tags">
+                <span class="song-tag">原曲</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部详情面板 -->
+    <div class="detail-panel">
+        <div class="detail-left">
+            <div class="difficulty-selector">
+                <div class="difficulty-row">
+                    <span class="difficulty-label">Easy</span>
+                    <div class="difficulty-circle easy">5</div>
+                </div>
+                <div class="difficulty-row">
+                    <span class="difficulty-label">Normal</span>
+                    <div class="difficulty-circle normal">11</div>
+                </div>
+                <div class="difficulty-row">
+                    <span class="difficulty-label">Hard</span>
+                    <div class="difficulty-circle hard selected">17</div>
+                </div>
+                <div class="difficulty-row">
+                    <span class="difficulty-label">Expert</span>
+                    <div class="difficulty-circle expert">24</div>
+                </div>
+                <div class="difficulty-row">
+                    <span class="difficulty-label">Master</span>
+                    <div class="difficulty-circle master">🔒</div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn">🔀</button>
+                <button class="action-btn">👤</button>
+                <button class="action-btn confirm">确定</button>
+            </div>
+        </div>
+        
+        <div class="detail-center">
+            <h2 class="song-title">帝国少女</h2>
+            <p class="song-artist">R Sound Design</p>
+            <p class="song-vocal">Vo. 初音未来</p>
+        </div>
+        
+        <div class="detail-right">
+            <img class="detail-cover" src="https://picsum.photos/seed/pjsk1/300/200" alt="detail">
+        </div>
+    </div>
+    
+    <!-- 右侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-btn">根据歌曲名·作者名查找</div>
+        <div class="sidebar-btn">🔍</div>
+        <div class="sidebar-btn">☰</div>
+        <div class="sidebar-btn">歌单</div>
+    </div>
+</div>
+`;
 }
