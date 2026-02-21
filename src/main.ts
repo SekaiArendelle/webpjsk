@@ -1,8 +1,5 @@
 import './style.css'
+import { homePage } from './components/home';
 
 const app = document.getElementById('app') as HTMLDivElement;
-app.innerHTML = `
-  <div>
-    <h1>Hello world!</h1>
-  </div>
-`;
+app.innerHTML = homePage();
