@@ -4,8 +4,7 @@ import { render } from './render';
 const app = document.getElementById('app') as HTMLDivElement;
 app.innerHTML = `
   <div>
-    <h1>Hello world!</h1>
-    <canvas id="gameCanvas" width="1000" height="800"></canvas>
+    <canvas id="gameCanvas"></canvas>
   </div>
 `;
 
