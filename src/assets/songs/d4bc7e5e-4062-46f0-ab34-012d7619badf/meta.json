@@ -1,18 +1,18 @@
 {
-    "title": "Kyu-kurarin",
-    "author": "いよわ",
-    "charts": [
-        {
-            "level": 7,
-            "file": "chart1.ts"
-        },
-        {
-            "level": 9,
-            "file": "chart2.ts"
-        },
-        {
-            "level": 11,
-            "file": "chart3.ts"
-        }
-    ]
+  "title": "Kyu-kurarin",
+  "author": "いよわ",
+  "charts": [
+    {
+      "level": 7,
+      "file": "chart1.ts"
+    },
+    {
+      "level": 9,
+      "file": "chart2.ts"
+    },
+    {
+      "level": 11,
+      "file": "chart3.ts"
+    }
+  ]
 }

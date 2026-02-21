@@ -1,5 +1,5 @@
 export function homePage() {
-    return `
+  return `
 <div class="pjsk-container">
     <!-- 分类栏 -->
     <div class="category-bar">
