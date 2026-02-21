@@ -1,0 +1,18 @@
+{
+    "title": "SHIAWASE FOR YOU!",
+    "author": "いよわ",
+    "charts": [
+        {
+            "level": 6,
+            "file": "chart1.ts"
+        },
+        {
+            "level": 8,
+            "file": "chart2.ts"
+        },
+        {
+            "level": 10,
+            "file": "chart3.ts"
+        }
+    ]
+}
