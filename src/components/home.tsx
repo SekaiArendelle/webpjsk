@@ -65,22 +65,22 @@ function difficulty_circle(
 ) {
   return (
     <div class="difficulty-row">
-                <span class="difficulty-label">${difficulty_to_string(difficulty)}</span>
-    <div
-      class={`difficulty-circle ${difficulty_to_string(difficulty)}`}
-      onClick={() => setDifficulty(difficulty)}
-    >
-      <input
-        type="radio"
-        name="difficulty"
-        id={`difficulty-${difficulty_to_string(difficulty)}`}
-        value={difficulty_to_string(difficulty)}
-        checked={difficulty === Difficulty.Easy}
-      />
-      <label for={`difficulty-${difficulty_to_string(difficulty)}`}>
-        {level}
-      </label>
-    </div>
+      <span class="difficulty-label">{difficulty_to_string(difficulty)}</span>
+      <div
+        class={`difficulty-circle ${difficulty_to_string(difficulty)}`}
+        onClick={() => setDifficulty(difficulty)}
+      >
+        <input
+          type="radio"
+          name="difficulty"
+          id={`difficulty-${difficulty_to_string(difficulty)}`}
+          value={difficulty_to_string(difficulty)}
+          checked={difficulty === Difficulty.Easy}
+        />
+        <label for={`difficulty-${difficulty_to_string(difficulty)}`}>
+          {level}
+        </label>
+      </div>
     </div>
   );
 }
@@ -92,22 +92,17 @@ function Home() {
   return (
     <>
       <div class="pjsk-container">
-        <div class="category-bar">
-          <div class="category-item">全部</div>
-          <div class="category-item">其他</div>
-        </div>
-
         {song_grids(songs, setSelectedSong)}
 
         <div class="detail-panel">
           <div class="detail-left">
             <div class="difficulty-selector">
-                {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
-                {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
-                {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
+              {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
+              {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
+              {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
             </div>
             <div class="action-buttons">
-              <button class="action-btn confirm">确定</button>
+              <button class="action-btn confirm">Confirm</button>
             </div>
           </div>
           {detail_panel(selected_song())}
