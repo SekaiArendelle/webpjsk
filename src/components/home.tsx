@@ -8,12 +8,19 @@ import { For, createSignal, type Setter } from "solid-js";
  * @param songs list of song
  * @returns html div node
  */
-function song_grids(songs: Song[], setSelectedSong: Setter<Song>) {
+function song_grids(
+  songs: Song[],
+  selectedSong: () => Song,
+  setSelectedSong: Setter<Song>,
+) {
   return (
     <div class="song-grid">
       <For each={songs}>
         {(song) => (
-          <div class="song-card" onClick={() => setSelectedSong(song)}>
+          <div
+            class={`song-card ${selectedSong() === song ? "selected" : ""}`}
+            onClick={() => setSelectedSong(song)}
+          >
             <img
               class="song-cover"
               src={`/src/assets/songs/${song.coverPath}`}
@@ -61,6 +68,7 @@ function difficulty_to_string(difficulty: Difficulty): string {
 function difficulty_circle(
   level: number,
   difficulty: Difficulty,
+  currDifficulty: Difficulty,
   setDifficulty: Setter<Difficulty>,
 ) {
   return (
@@ -75,7 +83,7 @@ function difficulty_circle(
           name="difficulty"
           id={`difficulty-${difficulty_to_string(difficulty)}`}
           value={difficulty_to_string(difficulty)}
-          checked={difficulty === Difficulty.Easy}
+          checked={currDifficulty === difficulty}
         />
         <label for={`difficulty-${difficulty_to_string(difficulty)}`}>
           {level}
@@ -91,25 +99,34 @@ function Home() {
 
   return (
     <div class="pjsk-container">
-      {song_grids(songs, setSelectedSong)}
+      {song_grids(songs, selected_song, setSelectedSong)}
+      <div class="sidebar">
+        <div class="sidebar-btn">🔍</div>
+        <div class="sidebar-btn">⚙</div>
+      </div>
 
       <div class="detail-panel">
         <div class="detail-left">
           <div class="difficulty-selector">
-            {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
-            {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
-            {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
+            {difficulty_circle(5, Difficulty.Easy, difficulty(), setDifficulty)}
+            {difficulty_circle(
+              17,
+              Difficulty.Hard,
+              difficulty(),
+              setDifficulty,
+            )}
+            {difficulty_circle(
+              28,
+              Difficulty.Expert,
+              difficulty(),
+              setDifficulty,
+            )}
           </div>
           <div class="action-buttons">
             <button class="action-btn confirm">Confirm</button>
           </div>
         </div>
         {detail_panel(selected_song())}
-      </div>
-
-      <div class="sidebar">
-        <div class="sidebar-btn">🔍</div>
-        <div class="sidebar-btn">⚙</div>
       </div>
     </div>
   );
