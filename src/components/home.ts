@@ -23,14 +23,8 @@ function renderSongGrid() {
     card.className = "song-card";
     card.dataset.songId = song.id;
 
-    const maxDifficulty = Math.max(...song.difficulty);
-
     card.innerHTML = `
       <img class="song-cover" src="/src/assets/songs/${song.coverPath}" alt="${song.title}" />
-      <div class="song-level">${maxDifficulty}</div>
-      <div class="song-tags">
-        <span class="song-tag">原曲</span>
-      </div>
     `;
 
     card.addEventListener("click", () => selectSong(song));
@@ -92,12 +86,12 @@ function setupEventListeners() {
   ) as HTMLElement;
   if (confirmBtn) {
     confirmBtn.addEventListener("click", () => {
-      if (selectedSong) {
-        console.log(
-          `Selected: ${selectedSong.title} - Level ${selectedSong.difficulty[selectedDifficulty]}`,
-        );
-        // Handle confirm action here
-      }
+      // if (selectedSong) {
+      //   console.log(
+      //     `Selected: ${selectedSong.title} - Level ${selectedSong.difficulty[selectedDifficulty]}`,
+      //   );
+      //   // Handle confirm action here
+      // }
     });
   }
 }

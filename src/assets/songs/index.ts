@@ -3,7 +3,6 @@ export interface Song {
   title: string;
   author: string;
   vocalist: string;
-  difficulty: number[];
   coverPath: string;
   charts: Array<{
     level: number;
@@ -17,7 +16,6 @@ export const songs: Song[] = [
     title: "SHIAWASE FOR YOU!",
     author: "いよわ",
     vocalist: "初音ミク",
-    difficulty: [6, 8, 10], // TODO remove this
     coverPath: "9a4c1569-d693-4b52-b69c-1038b98417b6/cover.avif",
     charts: [
       { level: 6, file: "chart1.ts" },
@@ -30,7 +28,6 @@ export const songs: Song[] = [
     title: "Kyu-kurarin",
     author: "いよわ",
     vocalist: "可不",
-    difficulty: [7, 9, 11],
     coverPath: "d4bc7e5e-4062-46f0-ab34-012d7619badf/cover.avif",
     charts: [
       { level: 7, file: "chart1.ts" },
