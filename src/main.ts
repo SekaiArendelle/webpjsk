@@ -1,11 +1,6 @@
 import "./style.css";
-import { render } from "./render";
+import { initHome } from "./components/home";
 
-const app = document.getElementById("app") as HTMLDivElement;
-app.innerHTML = `
-  <div>
-    <canvas id="gameCanvas"></canvas>
-  </div>
-`;
-
-render(document.getElementById("gameCanvas") as HTMLCanvasElement);
+document.addEventListener("DOMContentLoaded", () => {
+  initHome();
+});
