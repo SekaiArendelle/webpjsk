@@ -1,6 +1,9 @@
 {
+  "id": "9a4c1569-d693-4b52-b69c-1038b98417b6",
   "title": "SHIAWASE FOR YOU!",
   "author": "いよわ",
+  "vocalist": "Vo. 初音未来",
+  "difficulty": [6, 8, 10],
   "charts": [
     {
       "level": 6,

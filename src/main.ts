@@ -1,5 +1,7 @@
 import "./style.css";
-import { homePage } from "./components/home";
+import { initHome } from "./components/home";
 
-const app = document.getElementById("app") as HTMLDivElement;
-app.innerHTML = homePage();
+// Initialize the home page
+document.addEventListener("DOMContentLoaded", () => {
+  initHome();
+});

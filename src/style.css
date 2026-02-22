@@ -15,7 +15,6 @@
   color: white;
 }
 
-/* 顶部分类栏 */
 .category-bar {
   display: flex;
   align-items: center;
@@ -54,19 +53,18 @@
   filter: brightness(0) invert(1);
 }
 
-/* 歌曲网格 */
 .song-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 20px;
   overflow-y: auto;
 }
 
 .song-card {
   position: relative;
-  aspect-ratio: 16/10;
+  aspect-ratio: 16/9;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -133,9 +131,8 @@
   background: #ffd700;
 }
 
-/* 底部详情面板 */
 .detail-panel {
-  height: 200px;
+  height: 160px;
   background: linear-gradient(
     180deg,
     rgba(45, 27, 78, 0.95) 0%,
@@ -234,7 +231,9 @@
 }
 
 .action-btn.confirm {
-  width: 100px;
+  width: 80px;
+  height:30px;
+  margin-top:10px;
   background: linear-gradient(135deg, #00d4aa, #00b894);
   border: none;
   font-size: 14px;
@@ -245,7 +244,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* justify-content: center; */
 }
 
 .song-title {
@@ -264,8 +263,18 @@
 .song-vocal {
   font-size: 12px;
   color: #aaa;
+  margin-bottom: 8px;
+
 }
 
+.selected-level{
+
+  box-shadow: 
+    0 0 10px #fff5ad,     
+    0 0 20px #f0e68c,     
+    inset 0 0 10px #fff5ad;
+
+}
 .detail-right {
   width: 180px;
   display: flex;
@@ -281,7 +290,6 @@
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-/* 右侧搜索栏 */
 .sidebar {
   position: fixed;
   right: 0;
@@ -294,6 +302,8 @@
   align-items: center;
   padding: 16px 0;
   gap: 16px;
+  overflow: visible;
+  z-index: 100;
 }
 
 .sidebar-btn {
@@ -309,4 +319,32 @@
   writing-mode: vertical-rl;
   font-size: 12px;
   letter-spacing: 2px;
+}
+
+#search-btn {
+  position: relative;
+}
+
+#search-btn::after {
+  content: "根据歌曲名·作者名查找";
+  position: absolute;
+  top: 100%;
+  right: 50%;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: #333;
+  color: #fff;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s;
+  pointer-events: auto;
+  writing-mode: horizontal-tb;
+}
+
+#search-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
