@@ -1,11 +1,5 @@
 import "./style.css";
-import { render } from "./render";
+import { homePage } from "./components/home";
 
 const app = document.getElementById("app") as HTMLDivElement;
-app.innerHTML = `
-  <div>
-    <canvas id="gameCanvas"></canvas>
-  </div>
-`;
-
-render(document.getElementById("gameCanvas") as HTMLCanvasElement);
+app.innerHTML = homePage();
