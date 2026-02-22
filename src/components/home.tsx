@@ -1,4 +1,5 @@
 import "./home.css";
+import { Difficulty } from "./difficulty";
 import { type Song, songs } from "../assets/songs";
 import { For, createSignal, type Setter } from "solid-js";
 
@@ -25,7 +26,7 @@ function song_grids(songs: Song[], setSelectedSong: Setter<Song>) {
   );
 }
 
-function detail_panel(a_song : Song) {
+function detail_panel(a_song: Song) {
   return (
     <>
       <div class="detail-center">
@@ -45,8 +46,48 @@ function detail_panel(a_song : Song) {
   );
 }
 
+function difficulty_to_string(difficulty: Difficulty): string {
+  switch (difficulty) {
+    case Difficulty.Easy:
+      return "easy";
+    case Difficulty.Hard:
+      return "hard";
+    case Difficulty.Expert:
+      return "expert";
+    // default: unreachable()
+  }
+}
+
+function difficulty_circle(
+  level: number,
+  difficulty: Difficulty,
+  setDifficulty: Setter<Difficulty>,
+) {
+  return (
+    <div class="difficulty-row">
+                <span class="difficulty-label">${difficulty_to_string(difficulty)}</span>
+    <div
+      class={`difficulty-circle ${difficulty_to_string(difficulty)}`}
+      onClick={() => setDifficulty(difficulty)}
+    >
+      <input
+        type="radio"
+        name="difficulty"
+        id={`difficulty-${difficulty_to_string(difficulty)}`}
+        value={difficulty_to_string(difficulty)}
+        checked={difficulty === Difficulty.Easy}
+      />
+      <label for={`difficulty-${difficulty_to_string(difficulty)}`}>
+        {level}
+      </label>
+    </div>
+    </div>
+  );
+}
+
 function Home() {
   const [selected_song, setSelectedSong] = createSignal<Song>(songs[0]);
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
 
   return (
     <>
@@ -61,43 +102,9 @@ function Home() {
         <div class="detail-panel">
           <div class="detail-left">
             <div class="difficulty-selector">
-              <div class="difficulty-row">
-                <span class="difficulty-label">Easy</span>
-                <div class="difficulty-circle easy">
-                  <input
-                    type="radio"
-                    name="difficulty"
-                    id="easy"
-                    value="easy"
-                    checked
-                  />
-                  <label for="easy">5</label>
-                </div>
-              </div>
-              <div class="difficulty-row">
-                <span class="difficulty-label">Hard</span>
-                <div class="difficulty-circle hard">
-                  <input
-                    type="radio"
-                    name="difficulty"
-                    id="hard"
-                    value="hard"
-                  />
-                  <label for="hard">17</label>
-                </div>
-              </div>
-              <div class="difficulty-row">
-                <span class="difficulty-label">Expert</span>
-                <div class="difficulty-circle expert">
-                  <input
-                    type="radio"
-                    name="difficulty"
-                    id="expert"
-                    value="expert"
-                  />
-                  <label for="expert">24</label>
-                </div>
-              </div>
+                {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
+                {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
+                {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
             </div>
             <div class="action-buttons">
               <button class="action-btn confirm">确定</button>
