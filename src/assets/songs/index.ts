@@ -4,10 +4,9 @@ export interface Song {
   author: string;
   vocal: string;
   coverPath: string;
-  charts: Array<{
-    level: number;
-    file: string;
-  }>;
+  easyChartFilePath: string;
+  hardChartFilePath: string;
+  expertChartFilePath: string;
 }
 
 export const songs: Song[] = [
@@ -17,11 +16,9 @@ export const songs: Song[] = [
     author: "いよわ",
     vocal: "初音ミク",
     coverPath: "9a4c1569-d693-4b52-b69c-1038b98417b6/cover.avif",
-    charts: [
-      { level: 6, file: "chart1.ts" },
-      { level: 8, file: "chart2.ts" },
-      { level: 10, file: "chart3.ts" },
-    ],
+    easyChartFilePath: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart1.ts",
+    hardChartFilePath: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart2.ts",
+    expertChartFilePath: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart3.ts",
   },
   {
     id: "d4bc7e5e-4062-46f0-ab34-012d7619badf",
@@ -29,10 +26,8 @@ export const songs: Song[] = [
     author: "いよわ",
     vocal: "可不",
     coverPath: "d4bc7e5e-4062-46f0-ab34-012d7619badf/cover.avif",
-    charts: [
-      { level: 7, file: "chart1.ts" },
-      { level: 9, file: "chart2.ts" },
-      { level: 11, file: "chart3.ts" },
-    ],
+    easyChartFilePath: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart1.ts",
+    hardChartFilePath: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart2.ts",
+    expertChartFilePath: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart3.ts",
   },
 ];

@@ -90,30 +90,28 @@ function Home() {
   const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
 
   return (
-    <>
-      <div class="pjsk-container">
-        {song_grids(songs, setSelectedSong)}
+    <div class="pjsk-container">
+      {song_grids(songs, setSelectedSong)}
 
-        <div class="detail-panel">
-          <div class="detail-left">
-            <div class="difficulty-selector">
-              {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
-              {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
-              {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
-            </div>
-            <div class="action-buttons">
-              <button class="action-btn confirm">Confirm</button>
-            </div>
+      <div class="detail-panel">
+        <div class="detail-left">
+          <div class="difficulty-selector">
+            {difficulty_circle(5, Difficulty.Easy, setDifficulty)}
+            {difficulty_circle(17, Difficulty.Hard, setDifficulty)}
+            {difficulty_circle(28, Difficulty.Expert, setDifficulty)}
           </div>
-          {detail_panel(selected_song())}
+          <div class="action-buttons">
+            <button class="action-btn confirm">Confirm</button>
+          </div>
         </div>
-
-        <div class="sidebar">
-          <div class="sidebar-btn">🔍</div>
-          <div class="sidebar-btn">⚙</div>
-        </div>
+        {detail_panel(selected_song())}
       </div>
-    </>
+
+      <div class="sidebar">
+        <div class="sidebar-btn">🔍</div>
+        <div class="sidebar-btn">⚙</div>
+      </div>
+    </div>
   );
 }
 
