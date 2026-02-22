@@ -79,19 +79,18 @@ body {
   filter: brightness(0) invert(1);
 }
 
-/* 歌曲网格 */
 .song-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 20px;
   overflow-y: auto;
 }
 
 .song-card {
   position: relative;
-  aspect-ratio: 16/10;
+  aspect-ratio: 16/9;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -261,6 +260,13 @@ body {
   font-weight: bold;
   margin-bottom: 4px;
   color: white;
+}
+
+.selected-level {
+  box-shadow:
+    0 0 10px #fff5ad,
+    0 0 20px #f0e68c,
+    inset 0 0 10px #fff5ad;
 }
 
 .song-artist {
