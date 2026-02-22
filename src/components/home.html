@@ -155,23 +155,30 @@
       <div class="difficulty-selector">
         <div class="difficulty-row">
           <span class="difficulty-label">Easy</span>
-          <div class="difficulty-circle easy">5</div>
-        </div>
-        <div class="difficulty-row">
-          <span class="difficulty-label">Normal</span>
-          <div class="difficulty-circle normal">11</div>
+          <div class="difficulty-circle easy">
+            <input
+              type="radio"
+              name="difficulty"
+              id="easy"
+              value="easy"
+              checked
+            />
+            <label for="easy">5</label>
+          </div>
         </div>
         <div class="difficulty-row">
           <span class="difficulty-label">Hard</span>
-          <div class="difficulty-circle hard selected">17</div>
+          <div class="difficulty-circle hard">
+            <input type="radio" name="difficulty" id="hard" value="hard" />
+            <label for="hard">17</label>
+          </div>
         </div>
         <div class="difficulty-row">
           <span class="difficulty-label">Expert</span>
-          <div class="difficulty-circle expert">24</div>
-        </div>
-        <div class="difficulty-row">
-          <span class="difficulty-label">Master</span>
-          <div class="difficulty-circle master">🔒</div>
+          <div class="difficulty-circle expert">
+            <input type="radio" name="difficulty" id="expert" value="expert" />
+            <label for="expert">24</label>
+          </div>
         </div>
       </div>
       <div class="action-buttons">

@@ -198,7 +198,12 @@ body {
   letter-spacing: 1px;
 }
 
+.difficulty-circle input[type="radio"] {
+  display: none;
+}
+
 .difficulty-circle {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -208,34 +213,44 @@ body {
   font-weight: bold;
   font-size: 14px;
   border: 2px solid;
-  cursor: pointer;
   transition: all 0.2s;
+  background-color: transparent;
 }
 
+/* Easy - default state */
 .difficulty-circle.easy {
   border-color: #00d4aa;
-  color: #00d4aa;
-}
-.difficulty-circle.normal {
-  border-color: #00d4ff;
-  color: #00d4ff;
-}
-.difficulty-circle.hard {
-  border-color: #ffd700;
-  color: #ffd700;
-}
-.difficulty-circle.expert {
-  border-color: #ff4757;
-  color: #ff4757;
-}
-.difficulty-circle.master {
-  border-color: #a55eea;
-  color: #a55eea;
+  color: white;
 }
 
-.difficulty-circle.selected {
-  background: currentColor;
-  color: #1a0f2e;
+/* Easy - selected state */
+.difficulty-circle.easy:has(input[type="radio"]:checked) {
+  background-color: #00d4aa;
+  color: black;
+}
+
+/* Hard - default state */
+.difficulty-circle.hard {
+  border-color: #ffd700;
+  color: white;
+}
+
+/* Hard - selected state */
+.difficulty-circle.hard:has(input[type="radio"]:checked) {
+  background-color: #ffd700;
+  color: black;
+}
+
+/* Expert - default state */
+.difficulty-circle.expert {
+  border-color: #ff4757;
+  color: white;
+}
+
+/* Expert - selected state */
+.difficulty-circle.expert:has(input[type="radio"]:checked) {
+  background-color: #ff4757;
+  color: black;
 }
 
 .action-buttons {
