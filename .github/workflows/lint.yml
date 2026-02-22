@@ -1,0 +1,16 @@
+name: Run eslint checks
+
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 22
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.x"
+      - name: Install dependencies
+        run: npm install
+      - name: Run eslint checks
+        run: npm run lint
