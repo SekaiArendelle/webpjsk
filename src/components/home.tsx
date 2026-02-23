@@ -1,8 +1,11 @@
+import { type PageKindProp } from "../utils/pagekindprop";
 import "./home.css";
 import { Difficulty } from "../utils/difficulty";
 import { type Song, songs } from "../assets/songs";
 import { For, createSignal, type Setter } from "solid-js";
 import { playAudio } from "../utils/play_audio";
+import { PageKind } from "../utils/pagekind";
+import { Chart } from "../utils/chart";
 
 /**
  * @pure
@@ -94,11 +97,41 @@ function difficulty_circle(
   );
 }
 
-function chart_entry(song: Song) {
+async function chart_entry(
+  song: Song,
+  difficulty: Difficulty,
+  pagekindProp: PageKindProp,
+) {
+  type ChartModule = { chart: Chart };
+  switch (difficulty) {
+    case Difficulty.Easy: {
+      const mod = (await import(
+        /* @vite-ignore */ `/src/assets/songs/${song.easyChartFilePath}`
+      )) as ChartModule;
+      pagekindProp.setChart(mod.chart);
+      break;
+    }
+    case Difficulty.Hard: {
+      const mod = (await import(
+        /* @vite-ignore */ `/src/assets/songs/${song.hardChartFilePath}`
+      )) as ChartModule;
+      pagekindProp.setChart(mod.chart);
+      break;
+    }
+    case Difficulty.Expert: {
+      const mod = (await import(
+        /* @vite-ignore */ `/src/assets/songs/${song.expertChartFilePath}`
+      )) as ChartModule;
+      pagekindProp.setChart(mod.chart);
+      break;
+    }
+    // default: unreachable()
+  }
+  pagekindProp.setPageKind(PageKind.Chart);
   playAudio(`/src/assets/songs/${song.musicPath}`);
 }
 
-function Home() {
+function Home(pagekindProp: PageKindProp) {
   const [selected_song, setSelectedSong] = createSignal<Song>(songs[0]);
   const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
 
@@ -130,7 +163,9 @@ function Home() {
           <div class="action-buttons">
             <button
               class="action-btn confirm"
-              onClick={() => chart_entry(selected_song())}
+              onClick={async () =>
+                await chart_entry(selected_song(), difficulty(), pagekindProp)
+              }
             >
               Confirm
             </button>
