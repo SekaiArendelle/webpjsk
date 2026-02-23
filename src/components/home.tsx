@@ -1,8 +1,10 @@
+import { type PageKindProp } from "../utils/pagekindprop";
 import "./home.css";
 import { Difficulty } from "../utils/difficulty";
 import { type Song, songs } from "../assets/songs";
 import { For, createSignal, type Setter } from "solid-js";
 import { playAudio } from "../utils/play_audio";
+import { PageKind } from "../utils/pagekind";
 
 /**
  * @pure
@@ -94,11 +96,12 @@ function difficulty_circle(
   );
 }
 
-function chart_entry(song: Song) {
+function chart_entry(song: Song, pagekindProp: PageKindProp) {
   playAudio(`/src/assets/songs/${song.musicPath}`);
+  pagekindProp.setPageKind(PageKind.Chart);
 }
 
-function Home() {
+function Home(pagekindProp: PageKindProp) {
   const [selected_song, setSelectedSong] = createSignal<Song>(songs[0]);
   const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
 
@@ -130,7 +133,7 @@ function Home() {
           <div class="action-buttons">
             <button
               class="action-btn confirm"
-              onClick={() => chart_entry(selected_song())}
+              onClick={() => chart_entry(selected_song(), pagekindProp)}
             >
               Confirm
             </button>

@@ -1,39 +1,26 @@
-const NoteType = {
-  Tap: "Tap",
-  Drag: "Drag",
-  Flick: "Flick",
-};
-
-type NoteType = (typeof NoteType)[keyof typeof NoteType];
+import "./chart.css";
+import { TapNote, FlickNote, TouchNote } from "./notes";
 
 const layoutInfo = {
   width: 1000,
 };
 
-const NoteStyles: Record<
-  NoteType,
-  { color: string; width: number; height: number }
-> = {
-  [NoteType.Tap]: { color: "#6CB6EF", width: 80, height: 0.01 },
-  [NoteType.Drag]: { color: "#F6D046", width: 80, height: 0.01 },
-  [NoteType.Flick]: { color: "#EB423E", width: 80, height: 0.01 },
-};
-
-function drawNote(
+function draw_note(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  noteType: NoteType,
-  canvasInfo: { width: number; height: number },
+  color: string,
+  noteWidth: number,
+  noteHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
 ) {
-  ctx.fillStyle = NoteStyles[noteType].color;
+  ctx.fillStyle = color;
   ctx.fillRect(
     x,
     y,
-    (NoteStyles[noteType].width / layoutInfo.width) * canvasInfo.width,
-    (NoteStyles[noteType].height / layoutInfo.width) *
-      canvasInfo.height *
-      canvasInfo.width,
+    (noteWidth / layoutInfo.width) * canvasWidth,
+    (noteHeight / layoutInfo.width) * canvasHeight * canvasWidth,
   );
 }
 
@@ -55,21 +42,39 @@ function renderFrame(
 ) {
   ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
   drawDecisionLine(ctx, canvas);
-  drawNote(ctx, 100, 100, NoteType.Tap, {
-    width: canvas.width / dpr,
-    height: canvas.height / dpr,
-  });
-  drawNote(ctx, 400, 100, NoteType.Flick, {
-    width: canvas.width / dpr,
-    height: canvas.height / dpr,
-  });
-  drawNote(ctx, 700, 100, NoteType.Drag, {
-    width: canvas.width / dpr,
-    height: canvas.height / dpr,
-  });
+  draw_note(
+    ctx,
+    100,
+    100,
+    TapNote.get_color(),
+    TapNote.get_width(),
+    TapNote.get_height(),
+    canvas.width / dpr,
+    canvas.height / dpr,
+  );
+  draw_note(
+    ctx,
+    400,
+    100,
+    TouchNote.get_color(),
+    TouchNote.get_width(),
+    TouchNote.get_height(),
+    canvas.width / dpr,
+    canvas.height / dpr,
+  );
+  draw_note(
+    ctx,
+    700,
+    100,
+    FlickNote.get_color(),
+    FlickNote.get_width(),
+    FlickNote.get_height(),
+    canvas.width / dpr,
+    canvas.height / dpr,
+  );
 }
 
-export function render(canvas: HTMLCanvasElement) {
+export function render_chart(canvas: HTMLCanvasElement) {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || canvas.width;
   const height = canvas.clientHeight || canvas.height;
@@ -118,3 +123,11 @@ export function render(canvas: HTMLCanvasElement) {
 
   renderFrame(ctx, canvas, dpr);
 }
+
+function Chart() {
+  let result = (<canvas id="gameCanvas"></canvas>) as HTMLCanvasElement;
+  render_chart(result);
+  return result;
+}
+
+export default Chart;
