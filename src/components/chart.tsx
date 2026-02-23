@@ -2,6 +2,7 @@ import "./chart.css";
 import { TapNote, FlickNote, TouchNote } from "../utils/notes";
 import { render } from "solid-js/web";
 import { onCleanup } from "solid-js";
+import { type ChartProp } from "./chartprop";
 
 const layoutInfo = {
   width: 1000,
@@ -127,7 +128,8 @@ export function renderChart(canvas: HTMLCanvasElement) {
   renderFrame(ctx, canvas, dpr);
 }
 
-function PlayChart() {
+function PlayChart({ chart }: ChartProp) {
+  console.assert(chart !== null, "chart prop should not be null");
   let result = (<canvas id="gameCanvas"></canvas>) as HTMLCanvasElement;
   renderChart(result);
   return result;
