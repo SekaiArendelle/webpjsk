@@ -15,7 +15,11 @@ function App() {
   return (
     <Switch>
       <Match when={getPageKind() === PageKind.Home}>
-        <Home setPageKind={setPageKind} getPageKind={getPageKind} setChart={setChart} />
+        <Home
+          setPageKind={setPageKind}
+          getPageKind={getPageKind}
+          setChart={setChart}
+        />
       </Match>
       <Match when={getPageKind() === PageKind.Chart}>
         <PlayChart chart={getChart()!} />
