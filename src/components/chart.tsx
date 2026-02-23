@@ -1,5 +1,7 @@
 import "./chart.css";
-import { TapNote, FlickNote, TouchNote } from "./notes";
+import { TapNote, FlickNote, TouchNote } from "../utils/notes";
+import { render } from "solid-js/web";
+import { onCleanup } from "solid-js";
 
 const layoutInfo = {
   width: 1000,
@@ -54,7 +56,7 @@ function renderFrame(
   );
   draw_note(
     ctx,
-    400,
+    130,
     100,
     TouchNote.get_color(),
     TouchNote.get_width(),
@@ -64,7 +66,7 @@ function renderFrame(
   );
   draw_note(
     ctx,
-    700,
+    160,
     100,
     FlickNote.get_color(),
     FlickNote.get_width(),
@@ -74,60 +76,61 @@ function renderFrame(
   );
 }
 
-export function render_chart(canvas: HTMLCanvasElement) {
+/**
+ * A component that shows an error popup when the browser does not support canvas.
+ * @returns A div element that shows the error message.
+ */
+function ErrorPopup() {
+  let popupRef: HTMLDivElement | undefined;
+
+  // animate in
+  requestAnimationFrame(() => {
+    if (popupRef) {
+      popupRef.style.opacity = "1";
+      popupRef.style.top = "40px";
+    }
+  });
+
+  // disappear after 4 seconds
+  const timer = setTimeout(() => {
+    if (popupRef) {
+      popupRef.style.opacity = "0";
+      popupRef.style.top = "20px";
+      setTimeout(() => popupRef?.remove(), 300);
+    }
+  }, 4000);
+
+  onCleanup(() => clearTimeout(timer));
+
+  return (
+    <div ref={popupRef} class="error-popup">
+      Your browser is not supported, please use a modern one.
+    </div>
+  );
+}
+
+export function renderChart(canvas: HTMLCanvasElement) {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || canvas.width;
   const height = canvas.clientHeight || canvas.height;
+
   canvas.width = width * dpr;
   canvas.height = height * dpr;
+
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    const popup = document.createElement("div");
-    popup.innerText = "Your browser is not supported, please use a modern one.";
-    Object.assign(popup.style, {
-      position: "fixed",
-      top: "20px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      backgroundColor: "#fef0f0",
-      color: "#f56c6c",
-      border: "1px solid #fde2e2",
-      padding: "15px 20px",
-      borderRadius: "8px",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-      fontSize: "14px",
-      fontFamily: "sans-serif",
-      zIndex: "9999",
-      opacity: "0",
-      transition: "opacity 0.3s ease, top 0.3s ease",
-    });
-    document.body.appendChild(popup);
-    // Due to the browser's rendering mechanism, in order to trigger an animation, you must read this property to force the browser to repaint.
-    requestAnimationFrame(() => {
-      popup.style.opacity = "1";
-      popup.style.top = "40px";
-    });
-
-    setTimeout(() => {
-      popup.style.opacity = "0";
-      popup.style.top = "20px";
-      setTimeout(() => {
-        if (document.body.contains(popup)) {
-          document.body.removeChild(popup);
-        }
-      }, 300);
-    }, 4000);
+    render(() => <ErrorPopup />, document.body);
     throw new Error("Failed to get canvas context");
   }
-  ctx.scale(dpr, dpr);
 
+  ctx.scale(dpr, dpr);
   renderFrame(ctx, canvas, dpr);
 }
 
-function Chart() {
+function PlayChart() {
   let result = (<canvas id="gameCanvas"></canvas>) as HTMLCanvasElement;
-  render_chart(result);
+  renderChart(result);
   return result;
 }
 
-export default Chart;
+export default PlayChart;
