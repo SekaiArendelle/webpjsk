@@ -110,7 +110,7 @@ function ErrorPopup() {
   );
 }
 
-export function renderChart(canvas: HTMLCanvasElement) {
+function renderChart(canvas: HTMLCanvasElement) {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || canvas.width;
   const height = canvas.clientHeight || canvas.height;
