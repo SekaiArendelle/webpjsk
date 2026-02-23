@@ -2,6 +2,7 @@ import "./home.css";
 import { Difficulty } from "./difficulty";
 import { type Song, songs } from "../assets/songs";
 import { For, createSignal, type Setter } from "solid-js";
+import { playAudio } from "./play_audio";
 
 /**
  * @pure
@@ -93,6 +94,10 @@ function difficulty_circle(
   );
 }
 
+function chart_entry(song: Song) {
+  playAudio(`/src/assets/songs/${song.musicPath}`);
+}
+
 function Home() {
   const [selected_song, setSelectedSong] = createSignal<Song>(songs[0]);
   const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
@@ -123,7 +128,7 @@ function Home() {
             )}
           </div>
           <div class="action-buttons">
-            <button class="action-btn confirm">Confirm</button>
+            <button class="action-btn confirm" onClick={() => chart_entry(selected_song())}>Confirm</button>
           </div>
         </div>
         {detail_panel(selected_song())}
