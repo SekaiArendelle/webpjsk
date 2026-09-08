@@ -3,6 +3,7 @@ import { For, createMemo, createSignal, type Accessor } from "solid-js";
 import { Difficulty, difficultyDefinitions } from "../domain/difficulty";
 import { isDifficultyAvailable, type Song } from "../domain/song";
 import { songRepository } from "../repositories";
+import { usePlayProgress } from "../stores/play-progress";
 import { usePlaySession } from "../stores/play-session";
 import "./select.css";
 
@@ -20,6 +21,7 @@ function SongGrid(props: {
   songList: readonly Song[];
   selectedSong: Accessor<Song>;
   selectSong: (song: Song) => void;
+  isCleared: (songId: string, difficulty: Difficulty) => boolean;
 }) {
   return (
     <div class="song-grid" aria-label="歌曲列表">
@@ -34,11 +36,15 @@ function SongGrid(props: {
             <img class="song-cover" src={song.coverUrl} alt="" />
             <span class="song-level">{song.levels[Difficulty.Expert]}</span>
             <span class="clear-gems" aria-hidden="true">
-              <i />
-              <i />
-              <i class="lit" />
-              <i />
-              <i />
+              <For each={difficultyDefinitions}>
+                {(difficulty) => (
+                  <i
+                    classList={{
+                      lit: props.isCleared(song.id, difficulty.kind),
+                    }}
+                  />
+                )}
+              </For>
             </span>
             <span class="song-tag">2D</span>
           </button>
@@ -84,6 +90,7 @@ function DifficultySelector(props: {
 export default function SelectRoute() {
   const navigate = useNavigate();
   const session = usePlaySession();
+  const progress = usePlayProgress();
   const songList = songRepository.listSongs();
   const initialSong =
     songRepository.findSongById(session.selectedSongId() ?? "") ?? songList[0];
@@ -187,6 +194,7 @@ export default function SelectRoute() {
             songList={filteredSongs()}
             selectedSong={selectedSong}
             selectSong={selectSong}
+            isCleared={progress.isCleared}
           />
         </section>
 

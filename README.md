@@ -46,6 +46,7 @@ src/
     index.ts              当前实现的唯一装配入口
   stores/                 跨页面但不应持久化到 URL 的会话状态
     play-session.tsx
+    play-progress.tsx     按歌曲和难度保存本地通关状态
   components/             可复用界面组件
   assets/songs/           当前本地歌曲、曲绘、音频和谱面
   utils/                  通用浏览器工具

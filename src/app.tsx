@@ -1,12 +1,17 @@
 import { Navigate, Route, Router } from "@solidjs/router";
 import { lazy, type ParentProps } from "solid-js";
+import { PlayProgressProvider } from "./stores/play-progress";
 import { PlaySessionProvider } from "./stores/play-session";
 
 const SelectRoute = lazy(() => import("./routes/select"));
 const PlayRoute = lazy(() => import("./routes/play"));
 
 function AppRoot(props: ParentProps) {
-  return <PlaySessionProvider>{props.children}</PlaySessionProvider>;
+  return (
+    <PlayProgressProvider>
+      <PlaySessionProvider>{props.children}</PlaySessionProvider>
+    </PlayProgressProvider>
+  );
 }
 
 function RedirectToSelect() {
