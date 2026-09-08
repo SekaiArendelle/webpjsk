@@ -1,9 +1,10 @@
-import { A, useParams, useSearchParams } from "@solidjs/router";
+import { A, useNavigate, useParams, useSearchParams } from "@solidjs/router";
 import {
   Show,
   createEffect,
   createMemo,
   createResource,
+  createSignal,
   onCleanup,
 } from "solid-js";
 import PlayChart from "../components/chart";
@@ -14,8 +15,10 @@ import { playAudio } from "../utils/play_audio";
 import "./play.css";
 
 export default function PlayRoute() {
+  const navigate = useNavigate();
   const params = useParams<{ songId: string }>();
   const [searchParams] = useSearchParams<{ difficulty?: string }>();
+  const [paused, setPaused] = createSignal(false);
 
   const song = createMemo(() => songRepository.findSongById(params.songId));
   const difficulty = createMemo(() => parseDifficulty(searchParams.difficulty));
@@ -42,6 +45,16 @@ export default function PlayRoute() {
     audio = playAudio(currentSong.musicUrl);
   });
 
+  createEffect(() => {
+    const isPaused = paused();
+    if (!audio) return;
+    if (isPaused) {
+      audio.pause();
+    } else {
+      void audio.play().catch(() => undefined);
+    }
+  });
+
   onCleanup(() => {
     audio?.pause();
     if (audio) audio.currentTime = 0;
@@ -49,10 +62,6 @@ export default function PlayRoute() {
 
   return (
     <main class="play-route">
-      <A class="play-route-back" href="/select" aria-label="返回选歌">
-        ←
-      </A>
-
       <Show
         when={chartRequest()}
         fallback={
@@ -77,7 +86,16 @@ export default function PlayRoute() {
             when={!chart.loading && chart()}
             fallback={<div class="route-message">正在加载谱面…</div>}
           >
-            {(loadedChart) => <PlayChart chart={loadedChart()} />}
+            {(loadedChart) => (
+              <PlayChart
+                chart={loadedChart()}
+                song={song()!}
+                difficulty={difficulty()!}
+                paused={paused}
+                togglePaused={() => setPaused((value) => !value)}
+                exit={() => navigate("/select")}
+              />
+            )}
           </Show>
         </Show>
       </Show>

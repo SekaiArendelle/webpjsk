@@ -41,8 +41,10 @@ const definitions: readonly LocalSongDefinition[] = [
     },
     chartPaths: {
       [Difficulty.Easy]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart1.ts",
-      [Difficulty.Hard]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart2.ts",
-      [Difficulty.Expert]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart3.ts",
+      [Difficulty.Normal]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart2.ts",
+      [Difficulty.Hard]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart3.ts",
+      [Difficulty.Expert]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart4.ts",
+      [Difficulty.Master]: "9a4c1569-d693-4b52-b69c-1038b98417b6/chart5.ts",
     },
   },
   {
@@ -61,8 +63,10 @@ const definitions: readonly LocalSongDefinition[] = [
     },
     chartPaths: {
       [Difficulty.Easy]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart1.ts",
-      [Difficulty.Hard]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart2.ts",
-      [Difficulty.Expert]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart3.ts",
+      [Difficulty.Normal]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart2.ts",
+      [Difficulty.Hard]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart3.ts",
+      [Difficulty.Expert]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart4.ts",
+      [Difficulty.Master]: "d4bc7e5e-4062-46f0-ab34-012d7619badf/chart5.ts",
     },
   },
 ];
