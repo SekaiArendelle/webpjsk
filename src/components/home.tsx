@@ -1,179 +1,266 @@
-import { type PageKindProp } from "../utils/pagekindprop";
-import "./home.css";
-import { Difficulty } from "../utils/difficulty";
+import {
+  For,
+  createMemo,
+  createSignal,
+  type Accessor,
+  type Setter,
+} from "solid-js";
 import { type Song, songs } from "../assets/songs";
-import { For, createSignal, type Setter } from "solid-js";
-import { playAudio } from "../utils/play_audio";
+import { type Chart } from "../utils/chart";
+import { Difficulty } from "../utils/difficulty";
+import { type PageKindProp } from "../utils/pagekindprop";
 import { PageKind } from "../utils/pagekind";
-import { Chart } from "../utils/chart";
+import { playAudio } from "../utils/play_audio";
+import "./home.css";
 
-/**
- * @pure
- * @param songs list of song
- * @returns html div node
- */
-function song_grids(
-  songs: Song[],
-  selectedSong: () => Song,
-  setSelectedSong: Setter<Song>,
-) {
+const difficultyMeta = [
+  { kind: Difficulty.Easy, label: "EASY", level: 5, className: "easy" },
+  { kind: null, label: "NORMAL", level: 12, className: "normal" },
+  { kind: Difficulty.Hard, label: "HARD", level: 17, className: "hard" },
+  { kind: Difficulty.Expert, label: "EXPERT", level: 28, className: "expert" },
+  { kind: null, label: "MASTER", level: 31, className: "master" },
+] as const;
+
+const categories = [
+  { icon: "♪", label: "全部", active: true },
+  { icon: "✦", label: "虚拟歌手" },
+  { icon: "♣", label: "Leo/need" },
+  { icon: "◉", label: "MORE MORE JUMP!" },
+  { icon: "♛", label: "Vivid BAD SQUAD" },
+  { icon: "◆", label: "Wonderlands×Showtime" },
+  { icon: "◇", label: "25点，Nightcord见。" },
+];
+
+const mediaUrls = import.meta.glob<string>("../assets/songs/*/*.{avif,m4a}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+
+const chartModules = import.meta.glob<{ chart: Chart }>(
+  "../assets/songs/*/chart*.ts",
+);
+
+function coverUrl(song: Song) {
+  return mediaUrls[`../assets/songs/${song.coverPath}`];
+}
+
+function musicUrl(song: Song) {
+  return mediaUrls[`../assets/songs/${song.musicPath}`];
+}
+
+function SongGrid(props: {
+  songList: Song[];
+  selectedSong: Accessor<Song>;
+  setSelectedSong: Setter<Song>;
+}) {
   return (
-    <div class="song-grid">
-      <For each={songs}>
-        {(song) => (
-          <div
-            class={`song-card ${selectedSong() === song ? "selected" : ""}`}
-            onClick={() => setSelectedSong(song)}
+    <div class="song-grid" aria-label="歌曲列表">
+      <For each={props.songList}>
+        {(song, index) => (
+          <button
+            class="song-card"
+            classList={{ selected: props.selectedSong() === song }}
+            onClick={() => props.setSelectedSong(song)}
+            aria-label={`选择歌曲 ${song.title}`}
           >
-            <img
-              class="song-cover"
-              src={`/src/assets/songs/${song.coverPath}`}
-              alt={song.title}
-            />
-          </div>
+            <img class="song-cover" src={coverUrl(song)} alt="" />
+            <span class="song-level">{index() === 0 ? 28 : 27}</span>
+            <span class="clear-gems" aria-hidden="true">
+              <i />
+              <i />
+              <i class="lit" />
+              <i />
+              <i />
+            </span>
+            <span class="song-tag">2D</span>
+          </button>
         )}
       </For>
     </div>
   );
 }
 
-function detail_panel(a_song: Song) {
+function DifficultySelector(props: {
+  difficulty: Accessor<Difficulty>;
+  setDifficulty: Setter<Difficulty>;
+}) {
   return (
-    <>
-      <div class="detail-center">
-        <h2 class="song-title">{a_song.title}</h2>
-        <p class="song-artist">{a_song.author}</p>
-        <p class="song-vocal">{a_song.vocal}</p>
-      </div>
-
-      <div class="detail-right">
-        <img
-          class="detail-cover"
-          src={`/src/assets/songs/${a_song.coverPath}`}
-          alt="detail"
-        />
-      </div>
-    </>
-  );
-}
-
-function difficulty_to_string(difficulty: Difficulty): string {
-  switch (difficulty) {
-    case Difficulty.Easy:
-      return "easy";
-    case Difficulty.Hard:
-      return "hard";
-    case Difficulty.Expert:
-      return "expert";
-    // default: unreachable()
-  }
-}
-
-function difficulty_circle(
-  level: number,
-  difficulty: Difficulty,
-  currDifficulty: Difficulty,
-  setDifficulty: Setter<Difficulty>,
-) {
-  return (
-    <div class="difficulty-row">
-      <span class="difficulty-label">{difficulty_to_string(difficulty)}</span>
-      <div
-        class={`difficulty-circle ${difficulty_to_string(difficulty)}`}
-        onClick={() => setDifficulty(difficulty)}
-      >
-        <input
-          type="radio"
-          name="difficulty"
-          id={`difficulty-${difficulty_to_string(difficulty)}`}
-          value={difficulty_to_string(difficulty)}
-          checked={currDifficulty === difficulty}
-        />
-        <label for={`difficulty-${difficulty_to_string(difficulty)}`}>
-          {level}
-        </label>
-      </div>
+    <div class="difficulty-selector" aria-label="难度选择">
+      <For each={difficultyMeta}>
+        {(item) => {
+          const disabled = item.kind === null;
+          return (
+            <button
+              class={`difficulty-item ${item.className}`}
+              classList={{
+                active: !disabled && props.difficulty() === item.kind,
+                unavailable: disabled,
+              }}
+              disabled={disabled}
+              onClick={() =>
+                item.kind !== null && props.setDifficulty(item.kind)
+              }
+            >
+              <span class="difficulty-number">{item.level}</span>
+              <span class="difficulty-name">{item.label}</span>
+            </button>
+          );
+        }}
+      </For>
     </div>
   );
 }
 
-async function chart_entry(
+async function chartEntry(
   song: Song,
   difficulty: Difficulty,
   pagekindProp: PageKindProp,
 ) {
-  type ChartModule = { chart: Chart };
+  let path: string;
+
   switch (difficulty) {
-    case Difficulty.Easy: {
-      const mod = (await import(
-        /* @vite-ignore */ `/src/assets/songs/${song.easyChartFilePath}`
-      )) as ChartModule;
-      pagekindProp.setChart(mod.chart);
+    case Difficulty.Easy:
+      path = song.easyChartFilePath;
       break;
-    }
-    case Difficulty.Hard: {
-      const mod = (await import(
-        /* @vite-ignore */ `/src/assets/songs/${song.hardChartFilePath}`
-      )) as ChartModule;
-      pagekindProp.setChart(mod.chart);
+    case Difficulty.Hard:
+      path = song.hardChartFilePath;
       break;
-    }
-    case Difficulty.Expert: {
-      const mod = (await import(
-        /* @vite-ignore */ `/src/assets/songs/${song.expertChartFilePath}`
-      )) as ChartModule;
-      pagekindProp.setChart(mod.chart);
+    case Difficulty.Expert:
+      path = song.expertChartFilePath;
       break;
-    }
-    // default: unreachable()
   }
+
+  const loadChart = chartModules[`../assets/songs/${path}`];
+  if (!loadChart) {
+    throw new Error(`找不到谱面文件：${path}`);
+  }
+
+  const mod = await loadChart();
+  pagekindProp.setChart(mod.chart);
   pagekindProp.setPageKind(PageKind.Chart);
-  playAudio(`/src/assets/songs/${song.musicPath}`);
+  playAudio(musicUrl(song));
 }
 
 function Home(pagekindProp: PageKindProp) {
-  const [selected_song, setSelectedSong] = createSignal<Song>(songs[0]);
-  const [difficulty, setDifficulty] = createSignal<Difficulty>(Difficulty.Easy);
+  const [selectedSong, setSelectedSong] = createSignal<Song>(songs[0]);
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(
+    Difficulty.Expert,
+  );
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const filteredSongs = createMemo(() => {
+    const query = searchQuery().trim().toLocaleLowerCase();
+    if (!query) return songs;
+    return songs.filter((song) =>
+      [song.title, song.author, song.vocal].some((value) =>
+        value.toLocaleLowerCase().includes(query),
+      ),
+    );
+  });
 
   return (
-    <div class="pjsk-container">
-      {song_grids(songs, selected_song, setSelectedSong)}
-      <div class="sidebar">
-        <div class="sidebar-btn">🔍</div>
-        <div class="sidebar-btn">⚙</div>
-      </div>
+    <main class="pjsk-container">
+      <div class="ambient-shape shape-one" />
+      <div class="ambient-shape shape-two" />
 
-      <div class="detail-panel">
-        <div class="detail-left">
-          <div class="difficulty-selector">
-            {difficulty_circle(5, Difficulty.Easy, difficulty(), setDifficulty)}
-            {difficulty_circle(
-              17,
-              Difficulty.Hard,
-              difficulty(),
-              setDifficulty,
+      <header class="topbar">
+        <button class="round-tool back-button" aria-label="返回">
+          <span>↶</span>
+        </button>
+
+        <label class="search-box">
+          <input
+            value={searchQuery()}
+            onInput={(event) => setSearchQuery(event.currentTarget.value)}
+            placeholder="根据歌曲名、作者名查找"
+            aria-label="搜索歌曲"
+          />
+          <span class="search-icon" aria-hidden="true" />
+        </label>
+
+        <button class="pill-tool list-button">
+          <span class="list-icon">☷</span>
+          <span>歌单</span>
+        </button>
+
+        <div class="topbar-spacer" />
+
+        <button class="round-tool filter-button" aria-label="筛选">
+          ▼
+        </button>
+        <button class="pill-tool sort-button">默认</button>
+        <button class="round-tool menu-button" aria-label="菜单">
+          ☰
+        </button>
+      </header>
+
+      <div class="selection-layout">
+        <nav class="category-rail" aria-label="歌曲分类">
+          <div class="category-title">全部</div>
+          <For each={categories}>
+            {(category) => (
+              <button
+                class="category-button"
+                classList={{ active: category.active }}
+                aria-label={category.label}
+                title={category.label}
+              >
+                {category.icon}
+              </button>
             )}
-            {difficulty_circle(
-              28,
-              Difficulty.Expert,
-              difficulty(),
-              setDifficulty,
-            )}
+          </For>
+          <div class="category-other">其他</div>
+          <span class="rail-arrow">▼</span>
+        </nav>
+
+        <section class="library-panel">
+          <SongGrid
+            songList={filteredSongs()}
+            selectedSong={selectedSong}
+            setSelectedSong={setSelectedSong}
+          />
+        </section>
+
+        <section class="detail-panel" aria-label="当前歌曲详情">
+          <div class="detail-card">
+            <div class="detail-content">
+              <img
+                class="detail-cover"
+                src={coverUrl(selectedSong())}
+                alt={`${selectedSong().title} 曲绘`}
+              />
+
+              <div class="song-copy">
+                <h1 class="song-title">{selectedSong().title}</h1>
+                <p class="song-artist">{selectedSong().author}</p>
+                <p class="song-vocal">Vo. {selectedSong().vocal}</p>
+              </div>
+
+              <span class="rank-badge">B</span>
+
+              <DifficultySelector
+                difficulty={difficulty}
+                setDifficulty={setDifficulty}
+              />
+
+              <button
+                class="confirm-button"
+                onClick={() =>
+                  void chartEntry(selectedSong(), difficulty(), pagekindProp)
+                }
+              >
+                确定
+              </button>
+
+              <div class="detail-actions" aria-hidden="true">
+                <span>⌘</span>
+                <span>♬</span>
+              </div>
+            </div>
           </div>
-          <div class="action-buttons">
-            <button
-              class="action-btn confirm"
-              onClick={async () =>
-                await chart_entry(selected_song(), difficulty(), pagekindProp)
-              }
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-        {detail_panel(selected_song())}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 
