@@ -1,4 +1,7 @@
-export function playAudio(audioPath: string) {
+export function playAudio(audioPath: string): HTMLAudioElement {
   const audio = new Audio(audioPath);
-  audio.play();
+  void audio.play().catch(() => {
+    // Browsers may block autoplay when chart loading outlives the click gesture.
+  });
+  return audio;
 }

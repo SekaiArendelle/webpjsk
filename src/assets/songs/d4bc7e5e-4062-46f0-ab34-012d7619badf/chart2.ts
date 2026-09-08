@@ -1,6 +1,6 @@
-import { ChartUnitWidth } from "../../../utils/chart_unit_width";
-import { TapNote } from "../../../utils/notes";
-import { Chart } from "../../../utils/chart";
+import { ChartUnitWidth } from "../../../domain/chart-unit-width";
+import { Chart } from "../../../domain/chart";
+import { TapNote } from "../../../domain/notes";
 
 export const chart = new Chart([
   [new TapNote(new ChartUnitWidth(1))],

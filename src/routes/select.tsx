@@ -1,25 +1,10 @@
-import {
-  For,
-  createMemo,
-  createSignal,
-  type Accessor,
-  type Setter,
-} from "solid-js";
-import { type Song, songs } from "../assets/songs";
-import { type Chart } from "../utils/chart";
-import { Difficulty } from "../utils/difficulty";
-import { type PageKindProp } from "../utils/pagekindprop";
-import { PageKind } from "../utils/pagekind";
-import { playAudio } from "../utils/play_audio";
-import "./home.css";
-
-const difficultyMeta = [
-  { kind: Difficulty.Easy, label: "EASY", level: 5, className: "easy" },
-  { kind: null, label: "NORMAL", level: 12, className: "normal" },
-  { kind: Difficulty.Hard, label: "HARD", level: 17, className: "hard" },
-  { kind: Difficulty.Expert, label: "EXPERT", level: 28, className: "expert" },
-  { kind: null, label: "MASTER", level: 31, className: "master" },
-] as const;
+import { useNavigate } from "@solidjs/router";
+import { For, createMemo, createSignal, type Accessor } from "solid-js";
+import { Difficulty, difficultyDefinitions } from "../domain/difficulty";
+import { isDifficultyAvailable, type Song } from "../domain/song";
+import { songRepository } from "../repositories";
+import { usePlaySession } from "../stores/play-session";
+import "./select.css";
 
 const categories = [
   { icon: "♪", label: "全部", active: true },
@@ -31,41 +16,23 @@ const categories = [
   { icon: "◇", label: "25点，Nightcord见。" },
 ];
 
-const mediaUrls = import.meta.glob<string>("../assets/songs/*/*.{avif,m4a}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-
-const chartModules = import.meta.glob<{ chart: Chart }>(
-  "../assets/songs/*/chart*.ts",
-);
-
-function coverUrl(song: Song) {
-  return mediaUrls[`../assets/songs/${song.coverPath}`];
-}
-
-function musicUrl(song: Song) {
-  return mediaUrls[`../assets/songs/${song.musicPath}`];
-}
-
 function SongGrid(props: {
-  songList: Song[];
+  songList: readonly Song[];
   selectedSong: Accessor<Song>;
-  setSelectedSong: Setter<Song>;
+  selectSong: (song: Song) => void;
 }) {
   return (
     <div class="song-grid" aria-label="歌曲列表">
       <For each={props.songList}>
-        {(song, index) => (
+        {(song) => (
           <button
             class="song-card"
-            classList={{ selected: props.selectedSong() === song }}
-            onClick={() => props.setSelectedSong(song)}
+            classList={{ selected: props.selectedSong().id === song.id }}
+            onClick={() => props.selectSong(song)}
             aria-label={`选择歌曲 ${song.title}`}
           >
-            <img class="song-cover" src={coverUrl(song)} alt="" />
-            <span class="song-level">{index() === 0 ? 28 : 27}</span>
+            <img class="song-cover" src={song.coverUrl} alt="" />
+            <span class="song-level">{song.levels[Difficulty.Expert]}</span>
             <span class="clear-gems" aria-hidden="true">
               <i />
               <i />
@@ -82,27 +49,29 @@ function SongGrid(props: {
 }
 
 function DifficultySelector(props: {
+  song: Accessor<Song>;
   difficulty: Accessor<Difficulty>;
-  setDifficulty: Setter<Difficulty>;
+  selectDifficulty: (difficulty: Difficulty) => void;
 }) {
   return (
     <div class="difficulty-selector" aria-label="难度选择">
-      <For each={difficultyMeta}>
+      <For each={difficultyDefinitions}>
         {(item) => {
-          const disabled = item.kind === null;
+          const available = () =>
+            isDifficultyAvailable(props.song(), item.kind);
           return (
             <button
               class={`difficulty-item ${item.className}`}
               classList={{
-                active: !disabled && props.difficulty() === item.kind,
-                unavailable: disabled,
+                active: available() && props.difficulty() === item.kind,
+                unavailable: !available(),
               }}
-              disabled={disabled}
-              onClick={() =>
-                item.kind !== null && props.setDifficulty(item.kind)
-              }
+              disabled={!available()}
+              onClick={() => props.selectDifficulty(item.kind)}
             >
-              <span class="difficulty-number">{item.level}</span>
+              <span class="difficulty-number">
+                {props.song().levels[item.kind]}
+              </span>
               <span class="difficulty-name">{item.label}</span>
             </button>
           );
@@ -112,51 +81,47 @@ function DifficultySelector(props: {
   );
 }
 
-async function chartEntry(
-  song: Song,
-  difficulty: Difficulty,
-  pagekindProp: PageKindProp,
-) {
-  let path: string;
+export default function SelectRoute() {
+  const navigate = useNavigate();
+  const session = usePlaySession();
+  const songList = songRepository.listSongs();
+  const initialSong =
+    songRepository.findSongById(session.selectedSongId() ?? "") ?? songList[0];
 
-  switch (difficulty) {
-    case Difficulty.Easy:
-      path = song.easyChartFilePath;
-      break;
-    case Difficulty.Hard:
-      path = song.hardChartFilePath;
-      break;
-    case Difficulty.Expert:
-      path = song.expertChartFilePath;
-      break;
+  if (!initialSong) throw new Error("歌曲仓库中没有歌曲");
+  if (!session.selectedSongId()) session.selectSong(initialSong.id);
+  if (!isDifficultyAvailable(initialSong, session.difficulty())) {
+    session.selectDifficulty(initialSong.availableDifficulties[0]);
   }
 
-  const loadChart = chartModules[`../assets/songs/${path}`];
-  if (!loadChart) {
-    throw new Error(`找不到谱面文件：${path}`);
-  }
-
-  const mod = await loadChart();
-  pagekindProp.setChart(mod.chart);
-  pagekindProp.setPageKind(PageKind.Chart);
-  playAudio(musicUrl(song));
-}
-
-function Home(pagekindProp: PageKindProp) {
-  const [selectedSong, setSelectedSong] = createSignal<Song>(songs[0]);
-  const [difficulty, setDifficulty] = createSignal<Difficulty>(
-    Difficulty.Expert,
-  );
   const [searchQuery, setSearchQuery] = createSignal("");
+  const selectedSong = createMemo(
+    () =>
+      songRepository.findSongById(session.selectedSongId() ?? "") ??
+      initialSong,
+  );
   const filteredSongs = createMemo(() => {
     const query = searchQuery().trim().toLocaleLowerCase();
-    if (!query) return songs;
-    return songs.filter((song) =>
+    if (!query) return songList;
+    return songList.filter((song) =>
       [song.title, song.author, song.vocal].some((value) =>
         value.toLocaleLowerCase().includes(query),
       ),
     );
   });
+
+  function selectSong(song: Song) {
+    session.selectSong(song.id);
+    if (!isDifficultyAvailable(song, session.difficulty())) {
+      session.selectDifficulty(song.availableDifficulties[0]);
+    }
+  }
+
+  function enterChart() {
+    const song = selectedSong();
+    const difficulty = session.difficulty();
+    navigate(`/play/${encodeURIComponent(song.id)}?difficulty=${difficulty}`);
+  }
 
   return (
     <main class="pjsk-container">
@@ -164,7 +129,11 @@ function Home(pagekindProp: PageKindProp) {
       <div class="ambient-shape shape-two" />
 
       <header class="topbar">
-        <button class="round-tool back-button" aria-label="返回">
+        <button
+          class="round-tool back-button"
+          aria-label="返回"
+          onClick={() => navigate(-1)}
+        >
           <span>↶</span>
         </button>
 
@@ -217,7 +186,7 @@ function Home(pagekindProp: PageKindProp) {
           <SongGrid
             songList={filteredSongs()}
             selectedSong={selectedSong}
-            setSelectedSong={setSelectedSong}
+            selectSong={selectSong}
           />
         </section>
 
@@ -226,7 +195,7 @@ function Home(pagekindProp: PageKindProp) {
             <div class="detail-content">
               <img
                 class="detail-cover"
-                src={coverUrl(selectedSong())}
+                src={selectedSong().coverUrl}
                 alt={`${selectedSong().title} 曲绘`}
               />
 
@@ -239,16 +208,12 @@ function Home(pagekindProp: PageKindProp) {
               <span class="rank-badge">B</span>
 
               <DifficultySelector
-                difficulty={difficulty}
-                setDifficulty={setDifficulty}
+                song={selectedSong}
+                difficulty={session.difficulty}
+                selectDifficulty={session.selectDifficulty}
               />
 
-              <button
-                class="confirm-button"
-                onClick={() =>
-                  void chartEntry(selectedSong(), difficulty(), pagekindProp)
-                }
-              >
+              <button class="confirm-button" onClick={enterChart}>
                 确定
               </button>
 
@@ -263,5 +228,3 @@ function Home(pagekindProp: PageKindProp) {
     </main>
   );
 }
-
-export default Home;

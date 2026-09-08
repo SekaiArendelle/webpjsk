@@ -1,31 +1,8 @@
-import "./main.css";
-import { createSignal, Match, Switch } from "solid-js";
 import { render } from "solid-js/web";
-import { PageKind } from "./utils/pagekind";
-import Home from "./components/home";
-import PlayChart from "./components/chart";
-import { Chart } from "./utils/chart";
+import App from "./app";
+import "./main.css";
 
-const app = document.getElementById("app") as HTMLDivElement;
+const app = document.getElementById("app");
+if (!app) throw new Error("找不到 #app 根节点");
 
-function App() {
-  const [getPageKind, setPageKind] = createSignal<PageKind>(PageKind.Home);
-  const [getChart, setChart] = createSignal<Chart | null>(null);
-  // TODO should I pass getter to Home?
-  return (
-    <Switch>
-      <Match when={getPageKind() === PageKind.Home}>
-        <Home
-          setPageKind={setPageKind}
-          getPageKind={getPageKind}
-          setChart={setChart}
-        />
-      </Match>
-      <Match when={getPageKind() === PageKind.Chart}>
-        <PlayChart chart={getChart()!} />
-      </Match>
-    </Switch>
-  );
-}
-
-render(App, app);
+render(() => <App />, app);

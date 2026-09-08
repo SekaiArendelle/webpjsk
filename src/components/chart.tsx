@@ -1,8 +1,8 @@
 import "./chart.css";
-import { TapNote, FlickNote, TouchNote } from "../utils/notes";
+import { FlickNote, TapNote, TouchNote } from "../domain/notes";
 import { render } from "solid-js/web";
-import { onCleanup } from "solid-js";
-import { type ChartProp } from "./chartprop";
+import { onCleanup, onMount } from "solid-js";
+import { type Chart } from "../domain/chart";
 
 const layoutInfo = {
   width: 1000,
@@ -49,9 +49,9 @@ function renderFrame(
     ctx,
     100,
     100,
-    TapNote.get_color(),
-    TapNote.get_width(),
-    TapNote.get_height(),
+    TapNote.getColor(),
+    TapNote.getWidth(),
+    TapNote.getHeight(),
     canvas.width / dpr,
     canvas.height / dpr,
   );
@@ -59,9 +59,9 @@ function renderFrame(
     ctx,
     130,
     100,
-    TouchNote.get_color(),
-    TouchNote.get_width(),
-    TouchNote.get_height(),
+    TouchNote.getColor(),
+    TouchNote.getWidth(),
+    TouchNote.getHeight(),
     canvas.width / dpr,
     canvas.height / dpr,
   );
@@ -69,9 +69,9 @@ function renderFrame(
     ctx,
     160,
     100,
-    FlickNote.get_color(),
-    FlickNote.get_width(),
-    FlickNote.get_height(),
+    FlickNote.getColor(),
+    FlickNote.getWidth(),
+    FlickNote.getHeight(),
     canvas.width / dpr,
     canvas.height / dpr,
   );
@@ -128,11 +128,16 @@ function renderChart(canvas: HTMLCanvasElement) {
   renderFrame(ctx, canvas, dpr);
 }
 
-function PlayChart({ chart }: ChartProp) {
+function PlayChart(props: { chart: Chart }) {
+  const chart = props.chart;
   console.assert(chart !== null, "chart prop should not be null");
-  let result = (<canvas id="gameCanvas"></canvas>) as HTMLCanvasElement;
-  renderChart(result);
-  return result;
+  let canvasRef: HTMLCanvasElement | undefined;
+
+  onMount(() => {
+    if (canvasRef) renderChart(canvasRef);
+  });
+
+  return <canvas ref={canvasRef} id="gameCanvas" />;
 }
 
 export default PlayChart;
