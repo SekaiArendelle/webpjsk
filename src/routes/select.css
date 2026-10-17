@@ -363,7 +363,7 @@ button {
   min-width: 39px;
   padding: 4px 6px 5px;
   color: #4b3039;
-  background: #fb4a68;
+  background: var(--difficulty-color);
   font-size: clamp(16px, 1.75vw, 23px);
   font-weight: 900;
   line-height: 1;
@@ -542,19 +542,24 @@ button {
   font-weight: 1000;
 }
 
-.difficulty-item.easy {
+.difficulty-item.easy,
+.song-card.easy {
   --difficulty-color: #23d698;
 }
-.difficulty-item.normal {
+.difficulty-item.normal,
+.song-card.normal {
   --difficulty-color: #38c5e9;
 }
-.difficulty-item.hard {
+.difficulty-item.hard,
+.song-card.hard {
   --difficulty-color: #ebbd31;
 }
-.difficulty-item.expert {
+.difficulty-item.expert,
+.song-card.expert {
   --difficulty-color: #f34d63;
 }
-.difficulty-item.master {
+.difficulty-item.master,
+.song-card.master {
   --difficulty-color: #ce5cd2;
 }
 

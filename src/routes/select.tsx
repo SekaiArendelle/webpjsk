@@ -20,6 +20,7 @@ const categories = [
 function SongGrid(props: {
   songList: readonly Song[];
   selectedSong: Accessor<Song>;
+  difficulty: Accessor<Difficulty>;
   selectSong: (song: Song) => void;
   isCleared: (songId: string, difficulty: Difficulty) => boolean;
 }) {
@@ -28,13 +29,13 @@ function SongGrid(props: {
       <For each={props.songList}>
         {(song) => (
           <button
-            class="song-card"
+            class={`song-card ${props.difficulty()}`}
             classList={{ selected: props.selectedSong().id === song.id }}
             onClick={() => props.selectSong(song)}
             aria-label={`选择歌曲 ${song.title}`}
           >
             <img class="song-cover" src={song.coverUrl} alt="" />
-            <span class="song-level">{song.levels[Difficulty.Expert]}</span>
+            <span class="song-level">{song.levels[props.difficulty()]}</span>
             <span class="clear-gems" aria-hidden="true">
               <For each={difficultyDefinitions}>
                 {(difficulty) => (
@@ -193,6 +194,7 @@ export default function SelectRoute() {
           <SongGrid
             songList={filteredSongs()}
             selectedSong={selectedSong}
+            difficulty={session.difficulty}
             selectSong={selectSong}
             isCleared={progress.isCleared}
           />
