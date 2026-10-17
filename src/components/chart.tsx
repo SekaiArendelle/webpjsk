@@ -11,7 +11,14 @@ import {
 import { type Chart, type ChartEvent } from "../domain/chart";
 import { difficultyDefinitions, type Difficulty } from "../domain/difficulty";
 import { JudgmentEngine, type Grade, type Judgment } from "../domain/judgment";
-import { FlickNote, HoldNote, TouchNote } from "../domain/notes";
+import {
+  FlickNote,
+  GuideNote,
+  SlideNote,
+  TraceFlickNote,
+  TraceNote,
+  type FlickDirection,
+} from "../domain/notes";
 import { type Song } from "../domain/song";
 import "./chart.css";
 
@@ -149,17 +156,20 @@ function drawHoldRibbon(
   height: number,
   head: number,
   tail: number,
-  lane: number,
-  laneWidth: number,
+  headLane: number,
+  tailLane: number,
+  headWidth: number,
+  tailWidth: number,
+  color: string,
 ) {
   const headProgress = Math.min(1, Math.max(0, head));
   const tailProgress = Math.min(1, Math.max(0, tail));
   const headGeometry = laneGeometry(width, height, headProgress ** 1.55);
   const tailGeometry = laneGeometry(width, height, tailProgress ** 1.55);
-  const headCenter = lerp(headGeometry.left, headGeometry.right, lane);
-  const tailCenter = lerp(tailGeometry.left, tailGeometry.right, lane);
-  const headHalfWidth = lerp(9, width * 0.064, headProgress) * laneWidth;
-  const tailHalfWidth = lerp(5, width * 0.028, tailProgress) * laneWidth;
+  const headCenter = lerp(headGeometry.left, headGeometry.right, headLane);
+  const tailCenter = lerp(tailGeometry.left, tailGeometry.right, tailLane);
+  const headHalfWidth = lerp(9, width * 0.064, headProgress) * headWidth;
+  const tailHalfWidth = lerp(5, width * 0.028, tailProgress) * tailWidth;
 
   const gradient = ctx.createLinearGradient(
     0,
@@ -167,9 +177,8 @@ function drawHoldRibbon(
     0,
     headGeometry.y,
   );
-  gradient.addColorStop(0, "rgba(57, 242, 226, 0.28)");
-  gradient.addColorStop(0.65, "rgba(28, 218, 239, 0.76)");
-  gradient.addColorStop(1, "rgba(24, 207, 240, 0.94)");
+  gradient.addColorStop(0, color + "55");
+  gradient.addColorStop(1, color + "ee");
 
   ctx.save();
   ctx.beginPath();
@@ -179,8 +188,116 @@ function drawHoldRibbon(
   ctx.lineTo(headCenter - headHalfWidth, headGeometry.y);
   ctx.closePath();
   ctx.fillStyle = gradient;
-  ctx.shadowColor = "#25e9ed";
+  ctx.shadowColor = color;
   ctx.shadowBlur = 15;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSlide(
+  ctx: CanvasRenderingContext2D,
+  event: ChartEvent,
+  width: number,
+  height: number,
+  currentMs: number,
+) {
+  const note = event.note as SlideNote;
+  const color =
+    note instanceof GuideNote
+      ? "#a48cff"
+      : note.critical
+        ? "#ffdf56"
+        : "#25e9ed";
+  ctx.save();
+  if (note instanceof GuideNote) ctx.globalAlpha = 0.36;
+  for (let index = 0; index < note.points.length - 1; index++) {
+    const start = note.points[index];
+    const end = note.points[index + 1];
+    const head = 1 - (event.timeMs + start.offsetMs - currentMs) / 1800;
+    const tail = 1 - (event.timeMs + end.offsetMs - currentMs) / 1800;
+    if (head < 0 || tail > 1) continue;
+    drawHoldRibbon(
+      ctx,
+      width,
+      height,
+      head,
+      tail,
+      (start.lane + start.width / 2) / 10,
+      (end.lane + end.width / 2) / 10,
+      start.width,
+      end.width,
+      color,
+    );
+  }
+  ctx.restore();
+  if (note instanceof GuideNote) return;
+  for (let index = 1; index < note.points.length; index++) {
+    const point = note.points[index];
+    if (
+      point.visible === false ||
+      (index < note.points.length - 1 && !point.judge)
+    )
+      continue;
+    const rawProgress = 1 - (event.timeMs + point.offsetMs - currentMs) / 1800;
+    if (rawProgress < 0 || rawProgress > 1.1) continue;
+    const geometry = laneGeometry(
+      width,
+      height,
+      Math.min(1, rawProgress) ** 1.65,
+    );
+    const center = lerp(
+      geometry.left,
+      geometry.right,
+      (point.lane + point.width / 2) / 10,
+    );
+    const markerWidth =
+      lerp(width * 0.018, width * 0.115, Math.min(1, rawProgress)) *
+      point.width;
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    roundedRect(
+      ctx,
+      center - markerWidth / 2,
+      geometry.y - 5,
+      markerWidth,
+      10,
+      5,
+    );
+    ctx.fill();
+    ctx.restore();
+    if (index === note.points.length - 1 && note.tail === "flick") {
+      drawFlickArrow(ctx, center, geometry.y - 7, 16, note.tailDirection);
+    }
+  }
+}
+
+function drawFlickArrow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  direction: FlickDirection,
+) {
+  const angles: Record<FlickDirection, number> = {
+    any: 0,
+    up: 0,
+    "up-left": -Math.PI / 4,
+    "up-right": Math.PI / 4,
+    down: Math.PI,
+    "down-left": (-3 * Math.PI) / 4,
+    "down-right": (3 * Math.PI) / 4,
+  };
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angles[direction]);
+  ctx.beginPath();
+  ctx.moveTo(0, -size);
+  ctx.lineTo(-size * 0.7, 0);
+  ctx.lineTo(size * 0.7, 0);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255, 236, 99, 0.94)";
   ctx.fill();
   ctx.restore();
 }
@@ -194,6 +311,9 @@ function drawNote(
   holding: boolean,
 ) {
   const travelTime = 1800;
+  if (event.note instanceof SlideNote)
+    drawSlide(ctx, event, width, height, currentMs);
+  if (event.note instanceof GuideNote) return;
   const rawProgress = holding ? 1 : 1 - (event.timeMs - currentMs) / travelTime;
   if (rawProgress < 0 || rawProgress > 1.1) return;
   const progress = rawProgress ** 1.65;
@@ -205,28 +325,17 @@ function drawNote(
   const noteWidth =
     lerp(width * 0.018, width * 0.115, progress) * event.note.getLaneWidth();
   const noteHeight = lerp(4, 15, progress);
-  const color =
-    event.note instanceof FlickNote
-      ? "#f8d853"
-      : event.note instanceof HoldNote
-        ? "#25e9ed"
-        : event.note instanceof TouchNote
-          ? "#50eed1"
-          : "#64ccff";
-
-  if (event.note instanceof HoldNote) {
-    const tailProgress =
-      1 - (event.timeMs + event.note.durationMs - currentMs) / travelTime;
-    drawHoldRibbon(
-      ctx,
-      width,
-      height,
-      Math.min(1, rawProgress),
-      tailProgress,
-      lane,
-      event.note.getLaneWidth(),
-    );
-  }
+  const color = event.note.critical
+    ? "#ffdf56"
+    : event.note instanceof TraceFlickNote
+      ? "#81f7df"
+      : event.note instanceof FlickNote
+        ? "#f8d853"
+        : event.note instanceof SlideNote
+          ? "#25e9ed"
+          : event.note instanceof TraceNote
+            ? "#50eed1"
+            : "#64ccff";
 
   ctx.save();
   ctx.globalAlpha = holding ? 0.75 : Math.min(1, rawProgress * 8);
@@ -247,15 +356,20 @@ function drawNote(
   ctx.strokeStyle = "rgba(235, 254, 255, 0.92)";
   ctx.stroke();
 
-  if (event.note instanceof FlickNote) {
+  if (
+    event.note instanceof FlickNote ||
+    (event.note instanceof SlideNote && event.note.head === "flick")
+  ) {
     const arrowSize = noteHeight * 1.35;
-    ctx.beginPath();
-    ctx.moveTo(center, geometry.y - noteHeight * 0.9 - arrowSize);
-    ctx.lineTo(center - arrowSize, geometry.y - noteHeight * 0.9);
-    ctx.lineTo(center + arrowSize, geometry.y - noteHeight * 0.9);
-    ctx.closePath();
-    ctx.fillStyle = "rgba(255, 236, 99, 0.88)";
-    ctx.fill();
+    drawFlickArrow(
+      ctx,
+      center,
+      geometry.y - noteHeight * 0.9,
+      arrowSize,
+      event.note instanceof FlickNote
+        ? event.note.direction
+        : event.note.headDirection,
+    );
   }
   ctx.restore();
 }
@@ -330,7 +444,7 @@ function createChartRenderer(
     drawLane(context, width, height, (currentMs / 2100) % 0.077);
     notes.forEach((note) => {
       const endMs =
-        note.note instanceof HoldNote
+        note.note instanceof SlideNote
           ? note.timeMs + note.note.durationMs
           : note.timeMs;
       if (!state.resolved.has(note.id) && endMs >= currentMs - 200) {
@@ -378,10 +492,7 @@ export default function PlayChart(props: {
   let canvasRef: HTMLCanvasElement | undefined;
   let renderer: ChartRenderer | undefined;
   let judgmentTimer: number | undefined;
-  const pointerStarts = new Map<
-    number,
-    { x: number; y: number; lane: number }
-  >();
+  const pointerStarts = new Map<number, { swipeX: number; swipeY: number }>();
   const engine = new JudgmentEngine(props.chart.getEvents());
   const [score, setScore] = createSignal(0);
   const [combo, setCombo] = createSignal(0);
@@ -389,13 +500,9 @@ export default function PlayChart(props: {
   const [judgment, setJudgment] = createSignal<Grade | null>(null);
   const [result, setResult] = createSignal<"cleared" | "failed" | null>(null);
   const formattedScore = createMemo(() => score().toString().padStart(8, "0"));
+  const maxScore = engine.getState().maxScore;
   const rankIndex = createMemo(() =>
-    Math.min(
-      3,
-      Math.floor(
-        (score() / Math.max(1, props.chart.getEvents().length * 1000)) * 4,
-      ),
-    ),
+    Math.min(3, Math.floor((score() / Math.max(1, maxScore)) * 4)),
   );
   const difficultyLabel =
     difficultyDefinitions.find((item) => item.kind === props.difficulty)
@@ -432,15 +539,25 @@ export default function PlayChart(props: {
     kind: "press" | "flick",
     x?: number,
     y?: number,
+    direction: FlickDirection = "any",
   ) {
     if (props.paused() || result()) return;
-    const results = engine.input(inputId, lane, props.audioTimeMs(), kind);
+    const results =
+      kind === "press"
+        ? engine.press(inputId, lane, props.audioTimeMs())
+        : engine.flick(inputId, lane, props.audioTimeMs(), direction);
     applyJudgments(results);
 
     if (results.length && canvasRef && renderer) {
       const rect = canvasRef.getBoundingClientRect();
       renderer.addHitBurst(x ?? rect.width / 2, y ?? rect.height * 0.81);
     }
+  }
+
+  function flickDirection(dx: number, dy: number): FlickDirection {
+    const vertical = dy > Math.abs(dx) * 0.35 ? "down" : "up";
+    if (Math.abs(dx) < Math.abs(dy) * 0.4) return vertical;
+    return `${vertical}-${dx < 0 ? "left" : "right"}`;
   }
 
   createEffect(() => {
@@ -471,15 +588,36 @@ export default function PlayChart(props: {
       KeyJ: 6,
       KeyK: 8,
     };
+    const keyDirections: Record<string, FlickDirection> = {
+      Space: "up",
+      KeyD: "up-left",
+      KeyF: "up-left",
+      KeyJ: "up-right",
+      KeyK: "up-right",
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code in keyLanes) {
         event.preventDefault();
-        if (!event.repeat)
+        if (props.paused() || result()) return;
+        if (!event.repeat) {
+          if (event.shiftKey) {
+            applyJudgments(
+              engine.touch(
+                event.code,
+                keyLanes[event.code],
+                props.audioTimeMs(),
+              ),
+            );
+          }
           registerHit(
             event.code,
             keyLanes[event.code],
             event.shiftKey ? "flick" : "press",
+            undefined,
+            undefined,
+            keyDirections[event.code],
           );
+        }
       }
     };
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -526,10 +664,40 @@ export default function PlayChart(props: {
           const rect = event.currentTarget.getBoundingClientRect();
           const x = event.clientX - rect.left;
           const y = event.clientY - rect.top;
+          if (y < rect.height * 0.68 || y > rect.height * 0.96) return;
           const lane = laneAt(x, rect.width);
-          pointerStarts.set(event.pointerId, { x, y, lane });
+          pointerStarts.set(event.pointerId, { swipeX: x, swipeY: y });
           event.currentTarget.setPointerCapture(event.pointerId);
           registerHit(`pointer-${event.pointerId}`, lane, "press", x, y);
+        }}
+        onPointerMove={(event) => {
+          const start = pointerStarts.get(event.pointerId);
+          if (!start || props.paused() || result()) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const lane = laneAt(x, rect.width);
+          applyJudgments(
+            engine.move(
+              `pointer-${event.pointerId}`,
+              lane,
+              props.audioTimeMs(),
+            ),
+          );
+          const dx = x - start.swipeX;
+          const dy = y - start.swipeY;
+          if (Math.hypot(dx, dy) >= 30) {
+            registerHit(
+              `pointer-${event.pointerId}`,
+              lane,
+              "flick",
+              x,
+              y,
+              flickDirection(dx, dy),
+            );
+            start.swipeX = x;
+            start.swipeY = y;
+          }
         }}
         onPointerUp={(event) => {
           const start = pointerStarts.get(event.pointerId);
@@ -537,13 +705,24 @@ export default function PlayChart(props: {
           const rect = event.currentTarget.getBoundingClientRect();
           const x = event.clientX - rect.left;
           const y = event.clientY - rect.top;
-          if (Math.hypot(x - start.x, y - start.y) >= 30) {
+          const lane = laneAt(x, rect.width);
+          applyJudgments(
+            engine.move(
+              `pointer-${event.pointerId}`,
+              lane,
+              props.audioTimeMs(),
+            ),
+          );
+          const dx = x - start.swipeX;
+          const dy = y - start.swipeY;
+          if (Math.hypot(dx, dy) >= 30) {
             registerHit(
               `pointer-${event.pointerId}`,
-              start.lane,
+              lane,
               "flick",
               x,
               y,
+              flickDirection(dx, dy),
             );
           }
           applyJudgments(

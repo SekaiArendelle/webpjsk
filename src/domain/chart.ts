@@ -1,4 +1,4 @@
-import { HoldNote, type Note } from "./notes";
+import { GuideNote, SlideNote, type Note } from "./notes";
 
 export interface ChartEvent {
   readonly id: string;
@@ -28,8 +28,29 @@ export class Chart {
       ) {
         throw new Error(`音符 ${event.id} 的轨道位置无效`);
       }
-      if (event.note instanceof HoldNote && event.note.durationMs <= 0) {
-        throw new Error(`长按音符 ${event.id} 的时长无效`);
+      if (event.note instanceof SlideNote) {
+        const points = event.note.points;
+        if (
+          points.length < 2 ||
+          points[0].offsetMs !== 0 ||
+          event.note.durationMs <= 0
+        ) {
+          throw new Error(`长条音符 ${event.id} 的时间无效`);
+        }
+        for (let index = 0; index < points.length; index++) {
+          const point = points[index];
+          if (
+            !Number.isFinite(point.offsetMs) ||
+            (index > 0 && point.offsetMs <= points[index - 1].offsetMs) ||
+            !Number.isFinite(point.lane) ||
+            !Number.isFinite(point.width) ||
+            point.lane < 0 ||
+            point.width <= 0 ||
+            point.lane + point.width > 10
+          ) {
+            throw new Error(`长条音符 ${event.id} 的轨迹无效`);
+          }
+        }
       }
       ids.add(event.id);
     }
@@ -38,6 +59,18 @@ export class Chart {
 
   getEvents(): readonly ChartEvent[] {
     return this.events;
+  }
+
+  getJudgmentCount(): number {
+    return this.events.reduce((count, event) => {
+      if (event.note instanceof GuideNote) return count;
+      return (
+        count +
+        (event.note instanceof SlideNote
+          ? 2 + event.note.getTickPoints().length
+          : 1)
+      );
+    }, 0);
   }
 }
 
