@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "node scripts/run-tests.mjs",
     "preview": "vite preview",
     "lint": " npx eslint . --fix ",
     "format": "prettier --write ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "esbuild": "^0.28.2",
     "eslint": "^10.0.1",
     "globals": "^17.3.0",
     "jiti": "^2.6.1",

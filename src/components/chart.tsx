@@ -1,25 +1,19 @@
 import {
   For,
   Show,
+  createEffect,
   createMemo,
   createSignal,
   onCleanup,
   onMount,
   type Accessor,
 } from "solid-js";
-import { type Chart } from "../domain/chart";
+import { type Chart, type ChartEvent } from "../domain/chart";
 import { difficultyDefinitions, type Difficulty } from "../domain/difficulty";
-import { FlickNote, TouchNote, type Note } from "../domain/notes";
+import { JudgmentEngine, type Grade, type Judgment } from "../domain/judgment";
+import { FlickNote, HoldNote, TouchNote } from "../domain/notes";
 import { type Song } from "../domain/song";
 import "./chart.css";
-
-type NoteKind = "tap" | "touch" | "flick";
-
-interface VisualNote {
-  kind: NoteKind;
-  lane: number;
-  offset: number;
-}
 
 interface HitBurst {
   x: number;
@@ -30,29 +24,6 @@ interface HitBurst {
 interface ChartRenderer {
   addHitBurst(x: number, y: number): void;
   destroy(): void;
-}
-
-function noteKind(note: Note): NoteKind {
-  if (note instanceof FlickNote) return "flick";
-  if (note instanceof TouchNote) return "touch";
-  return "tap";
-}
-
-function createVisualNotes(chart: Chart): VisualNote[] {
-  const source = chart.getGroups().flatMap((group) => group);
-
-  if (source.length === 0) return [];
-
-  const noteCount = Math.max(10, Math.min(14, source.length));
-  return Array.from({ length: noteCount }, (_, index) => {
-    const note = source[index % source.length];
-    const sourceLane = note.getWidthOffset().asNumber();
-    return {
-      kind: noteKind(note),
-      lane: ((sourceLane + index * 3) % 10) / 10,
-      offset: index / noteCount,
-    };
-  });
 }
 
 function lerp(from: number, to: number, amount: number): number {
@@ -177,16 +148,18 @@ function drawHoldRibbon(
   width: number,
   height: number,
   head: number,
+  tail: number,
   lane: number,
+  laneWidth: number,
 ) {
-  const headProgress = Math.min(1, Math.max(0.04, head));
-  const tailProgress = Math.max(0, headProgress - 0.48);
+  const headProgress = Math.min(1, Math.max(0, head));
+  const tailProgress = Math.min(1, Math.max(0, tail));
   const headGeometry = laneGeometry(width, height, headProgress ** 1.55);
   const tailGeometry = laneGeometry(width, height, tailProgress ** 1.55);
   const headCenter = lerp(headGeometry.left, headGeometry.right, lane);
   const tailCenter = lerp(tailGeometry.left, tailGeometry.right, lane);
-  const headHalfWidth = lerp(9, width * 0.064, headProgress);
-  const tailHalfWidth = lerp(5, width * 0.028, tailProgress);
+  const headHalfWidth = lerp(9, width * 0.064, headProgress) * laneWidth;
+  const tailHalfWidth = lerp(5, width * 0.028, tailProgress) * laneWidth;
 
   const gradient = ctx.createLinearGradient(
     0,
@@ -214,27 +187,49 @@ function drawHoldRibbon(
 
 function drawNote(
   ctx: CanvasRenderingContext2D,
-  visualNote: VisualNote,
+  event: ChartEvent,
   width: number,
   height: number,
-  elapsed: number,
+  currentMs: number,
+  holding: boolean,
 ) {
-  const travelTime = 4600;
-  const rawProgress = (elapsed / travelTime + visualNote.offset) % 1;
+  const travelTime = 1800;
+  const rawProgress = holding ? 1 : 1 - (event.timeMs - currentMs) / travelTime;
+  if (rawProgress < 0 || rawProgress > 1.1) return;
   const progress = rawProgress ** 1.65;
   const geometry = laneGeometry(width, height, progress);
-  const center = lerp(geometry.left, geometry.right, visualNote.lane);
-  const noteWidth = lerp(width * 0.018, width * 0.115, progress);
+  const lane =
+    (event.note.getWidthOffset().asNumber() + event.note.getLaneWidth() / 2) /
+    10;
+  const center = lerp(geometry.left, geometry.right, lane);
+  const noteWidth =
+    lerp(width * 0.018, width * 0.115, progress) * event.note.getLaneWidth();
   const noteHeight = lerp(4, 15, progress);
   const color =
-    visualNote.kind === "flick"
+    event.note instanceof FlickNote
       ? "#f8d853"
-      : visualNote.kind === "touch"
-        ? "#50eed1"
-        : "#64ccff";
+      : event.note instanceof HoldNote
+        ? "#25e9ed"
+        : event.note instanceof TouchNote
+          ? "#50eed1"
+          : "#64ccff";
+
+  if (event.note instanceof HoldNote) {
+    const tailProgress =
+      1 - (event.timeMs + event.note.durationMs - currentMs) / travelTime;
+    drawHoldRibbon(
+      ctx,
+      width,
+      height,
+      Math.min(1, rawProgress),
+      tailProgress,
+      lane,
+      event.note.getLaneWidth(),
+    );
+  }
 
   ctx.save();
-  ctx.globalAlpha = Math.min(1, rawProgress * 8);
+  ctx.globalAlpha = holding ? 0.75 : Math.min(1, rawProgress * 8);
   ctx.shadowColor = color;
   ctx.shadowBlur = 16;
   roundedRect(
@@ -252,7 +247,7 @@ function drawNote(
   ctx.strokeStyle = "rgba(235, 254, 255, 0.92)";
   ctx.stroke();
 
-  if (visualNote.kind === "flick") {
+  if (event.note instanceof FlickNote) {
     const arrowSize = noteHeight * 1.35;
     ctx.beginPath();
     ctx.moveTo(center, geometry.y - noteHeight * 0.9 - arrowSize);
@@ -303,17 +298,18 @@ function createChartRenderer(
   canvas: HTMLCanvasElement,
   chart: Chart,
   paused: Accessor<boolean>,
+  getTimeMs: () => number,
+  getVisualState: () => ReturnType<JudgmentEngine["getState"]>,
+  onTick: (timeMs: number) => void,
 ): ChartRenderer {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("当前浏览器不支持 Canvas 2D");
 
-  const notes = createVisualNotes(chart);
+  const notes = chart.getEvents();
   const bursts: HitBurst[] = [];
   let frameId = 0;
   let width = 0;
   let height = 0;
-  let elapsed = 0;
-  let previousTime = performance.now();
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -326,15 +322,28 @@ function createChartRenderer(
   }
 
   function renderFrame(now: number) {
-    const delta = Math.min(40, now - previousTime);
-    previousTime = now;
-    if (!paused()) elapsed += delta;
+    const currentMs = getTimeMs();
+    if (!paused()) onTick(currentMs);
+    const state = getVisualState();
 
     context.clearRect(0, 0, width, height);
-    drawLane(context, width, height, (elapsed / 2100) % 0.077);
-    drawHoldRibbon(context, width, height, (elapsed / 5200 + 0.55) % 1, 0.48);
-    drawHoldRibbon(context, width, height, (elapsed / 6100 + 0.16) % 1, 0.27);
-    notes.forEach((note) => drawNote(context, note, width, height, elapsed));
+    drawLane(context, width, height, (currentMs / 2100) % 0.077);
+    notes.forEach((note) => {
+      const endMs =
+        note.note instanceof HoldNote
+          ? note.timeMs + note.note.durationMs
+          : note.timeMs;
+      if (!state.resolved.has(note.id) && endMs >= currentMs - 200) {
+        drawNote(
+          context,
+          note,
+          width,
+          height,
+          currentMs,
+          state.holdingIds.has(note.id),
+        );
+      }
+    });
     drawBursts(context, bursts, now);
     frameId = requestAnimationFrame(renderFrame);
   }
@@ -360,50 +369,129 @@ export default function PlayChart(props: {
   song: Song;
   difficulty: Difficulty;
   paused: Accessor<boolean>;
+  audioTimeMs: () => number;
+  audioEnded: Accessor<boolean>;
   togglePaused: () => void;
   exit: () => void;
+  onComplete: (cleared: boolean) => void;
 }) {
   let canvasRef: HTMLCanvasElement | undefined;
   let renderer: ChartRenderer | undefined;
   let judgmentTimer: number | undefined;
+  const pointerStarts = new Map<
+    number,
+    { x: number; y: number; lane: number }
+  >();
+  const engine = new JudgmentEngine(props.chart.getEvents());
   const [score, setScore] = createSignal(0);
   const [combo, setCombo] = createSignal(0);
-  const [showJudgment, setShowJudgment] = createSignal(false);
+  const [life, setLife] = createSignal(1000);
+  const [judgment, setJudgment] = createSignal<Grade | null>(null);
+  const [result, setResult] = createSignal<"cleared" | "failed" | null>(null);
   const formattedScore = createMemo(() => score().toString().padStart(8, "0"));
-  const rankIndex = createMemo(() => Math.min(3, Math.floor(score() / 5000)));
+  const rankIndex = createMemo(() =>
+    Math.min(
+      3,
+      Math.floor(
+        (score() / Math.max(1, props.chart.getEvents().length * 1000)) * 4,
+      ),
+    ),
+  );
   const difficultyLabel =
     difficultyDefinitions.find((item) => item.kind === props.difficulty)
       ?.label ?? props.difficulty.toUpperCase();
 
-  function registerHit(x?: number, y?: number) {
-    if (props.paused()) return;
-    setCombo((value) => value + 1);
-    setScore((value) => value + 780 + Math.min(combo(), 200) * 4);
-    setShowJudgment(true);
-    window.clearTimeout(judgmentTimer);
-    judgmentTimer = window.setTimeout(() => setShowJudgment(false), 360);
+  function finish(cleared: boolean) {
+    if (result()) return;
+    setResult(cleared ? "cleared" : "failed");
+    props.onComplete(cleared);
+  }
 
-    if (canvasRef && renderer) {
+  function applyJudgments(results: Judgment[]) {
+    if (!results.length) return;
+    const state = engine.getState();
+    setScore(state.score);
+    setCombo(state.combo);
+    setLife(state.life);
+    setJudgment(results[results.length - 1].grade);
+    window.clearTimeout(judgmentTimer);
+    judgmentTimer = window.setTimeout(() => setJudgment(null), 360);
+    if (state.life === 0) finish(false);
+  }
+
+  function laneAt(x: number, width: number) {
+    return Math.max(
+      0,
+      Math.min(9, Math.floor(((x / width - 0.16) / 0.68) * 10)),
+    );
+  }
+
+  function registerHit(
+    inputId: string,
+    lane: number,
+    kind: "press" | "flick",
+    x?: number,
+    y?: number,
+  ) {
+    if (props.paused() || result()) return;
+    const results = engine.input(inputId, lane, props.audioTimeMs(), kind);
+    applyJudgments(results);
+
+    if (results.length && canvasRef && renderer) {
       const rect = canvasRef.getBoundingClientRect();
       renderer.addHitBurst(x ?? rect.width / 2, y ?? rect.height * 0.81);
     }
   }
 
+  createEffect(() => {
+    if (!props.audioEnded() || result()) return;
+    applyJudgments(engine.update(Infinity));
+    const state = engine.getState();
+    finish(state.life > 0 && state.judgedCount === state.totalCount);
+  });
+
   onMount(() => {
     if (canvasRef) {
-      renderer = createChartRenderer(canvasRef, props.chart, props.paused);
+      renderer = createChartRenderer(
+        canvasRef,
+        props.chart,
+        props.paused,
+        props.audioTimeMs,
+        () => engine.getState(),
+        (timeMs) => {
+          if (!result()) applyJudgments(engine.update(timeMs));
+        },
+      );
     }
 
+    const keyLanes: Record<string, number> = {
+      Space: 5,
+      KeyD: 1,
+      KeyF: 3,
+      KeyJ: 6,
+      KeyK: 8,
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (["Space", "KeyD", "KeyF", "KeyJ", "KeyK"].includes(event.code)) {
+      if (event.code in keyLanes) {
         event.preventDefault();
-        registerHit();
+        if (!event.repeat)
+          registerHit(
+            event.code,
+            keyLanes[event.code],
+            event.shiftKey ? "flick" : "press",
+          );
       }
     };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code in keyLanes)
+        applyJudgments(engine.release(event.code, props.audioTimeMs()));
+    };
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     onCleanup(() => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
       renderer?.destroy();
       window.clearTimeout(judgmentTimer);
     });
@@ -436,7 +524,38 @@ export default function PlayChart(props: {
         class="chart-canvas"
         onPointerDown={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
-          registerHit(event.clientX - rect.left, event.clientY - rect.top);
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const lane = laneAt(x, rect.width);
+          pointerStarts.set(event.pointerId, { x, y, lane });
+          event.currentTarget.setPointerCapture(event.pointerId);
+          registerHit(`pointer-${event.pointerId}`, lane, "press", x, y);
+        }}
+        onPointerUp={(event) => {
+          const start = pointerStarts.get(event.pointerId);
+          if (!start) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          if (Math.hypot(x - start.x, y - start.y) >= 30) {
+            registerHit(
+              `pointer-${event.pointerId}`,
+              start.lane,
+              "flick",
+              x,
+              y,
+            );
+          }
+          applyJudgments(
+            engine.release(`pointer-${event.pointerId}`, props.audioTimeMs()),
+          );
+          pointerStarts.delete(event.pointerId);
+        }}
+        onPointerCancel={(event) => {
+          applyJudgments(
+            engine.release(`pointer-${event.pointerId}`, props.audioTimeMs()),
+          );
+          pointerStarts.delete(event.pointerId);
         }}
       />
 
@@ -464,10 +583,10 @@ export default function PlayChart(props: {
         <div class="life-hud">
           <div class="life-copy">
             <span>LIFE</span>
-            <strong>1000</strong>
+            <strong>{life()}</strong>
           </div>
           <div class="life-track">
-            <i />
+            <i style={{ width: `${life() / 10}%` }} />
           </div>
           <button onClick={props.togglePaused} aria-label="暂停">
             Ⅱ
@@ -480,11 +599,26 @@ export default function PlayChart(props: {
         <strong>{combo()}</strong>
       </div>
 
-      <div class="judgment" classList={{ visible: showJudgment() }}>
-        PERFECT
+      <div class="judgment" classList={{ visible: judgment() !== null }}>
+        {judgment()}
       </div>
 
-      <Show when={props.paused()}>
+      <Show when={result()}>
+        {(outcome) => (
+          <div class="pause-overlay">
+            <div class="pause-dialog">
+              <span>RESULT</span>
+              <h1>{outcome() === "cleared" ? "通关" : "失败"}</h1>
+              <p>分数 {formattedScore()}</p>
+              <button class="exit-button" onClick={props.exit}>
+                返回选歌
+              </button>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      <Show when={props.paused() && !result()}>
         <div class="pause-overlay">
           <div class="pause-dialog">
             <span>PAUSED</span>

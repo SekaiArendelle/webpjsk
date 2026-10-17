@@ -1,63 +1,32 @@
 import { type ChartUnitWidth } from "./chart-unit-width";
 
 export abstract class Note {
-  constructor(private widthOffset: ChartUnitWidth) {}
+  constructor(
+    private readonly widthOffset: ChartUnitWidth,
+    private readonly laneWidth = 1,
+  ) {}
 
   getWidthOffset(): ChartUnitWidth {
     return this.widthOffset;
   }
 
-  static getColor(): string {
-    throw new Error("call of pure virtual function");
-  }
-
-  static getWidth(): number {
-    throw new Error("call of pure virtual function");
-  }
-
-  static getHeight(): number {
-    throw new Error("call of pure virtual function");
+  getLaneWidth(): number {
+    return this.laneWidth;
   }
 }
 
-export class TapNote extends Note {
-  static getColor() {
-    return "#6CB6EF";
-  }
+export class TapNote extends Note {}
 
-  static getWidth() {
-    return 80;
-  }
+export class FlickNote extends Note {}
 
-  static getHeight() {
-    return 0.05;
-  }
-}
+export class TouchNote extends Note {}
 
-export class FlickNote extends Note {
-  static getColor() {
-    return "#F6D046";
-  }
-
-  static getWidth() {
-    return 80;
-  }
-
-  static getHeight() {
-    return 0.05;
-  }
-}
-
-export class TouchNote extends Note {
-  static getColor() {
-    return "#EB423E";
-  }
-
-  static getWidth() {
-    return 80;
-  }
-
-  static getHeight() {
-    return 0.05;
+export class HoldNote extends Note {
+  constructor(
+    widthOffset: ChartUnitWidth,
+    readonly durationMs: number,
+    laneWidth = 1,
+  ) {
+    super(widthOffset, laneWidth);
   }
 }

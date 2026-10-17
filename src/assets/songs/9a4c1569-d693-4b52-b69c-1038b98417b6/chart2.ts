@@ -1,8 +1,9 @@
 import { ChartUnitWidth } from "../../../domain/chart-unit-width";
-import { Chart } from "../../../domain/chart";
+import { createDemoChart } from "../../../domain/chart";
 import { TapNote } from "../../../domain/notes";
 
-export const chart = new Chart([
-  [new TapNote(new ChartUnitWidth(0))],
-  [new TapNote(new ChartUnitWidth(0))],
-]);
+export const chart = createDemoChart(
+  [[new TapNote(new ChartUnitWidth(0))], [new TapNote(new ChartUnitWidth(0))]],
+  202895,
+  700,
+);

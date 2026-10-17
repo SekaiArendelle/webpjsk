@@ -11,14 +11,19 @@ import PlayChart from "../components/chart";
 import { parseDifficulty } from "../domain/difficulty";
 import { isDifficultyAvailable } from "../domain/song";
 import { songRepository } from "../repositories";
+import { usePlayProgress } from "../stores/play-progress";
 import { playAudio } from "../utils/play_audio";
 import "./play.css";
 
 export default function PlayRoute() {
   const navigate = useNavigate();
+  const progress = usePlayProgress();
   const params = useParams<{ songId: string }>();
   const [searchParams] = useSearchParams<{ difficulty?: string }>();
   const [paused, setPaused] = createSignal(false);
+  const [audio, setAudio] = createSignal<HTMLAudioElement | undefined>();
+  const [audioEnded, setAudioEnded] = createSignal(false);
+  const [audioError, setAudioError] = createSignal<string | null>(null);
 
   const song = createMemo(() => songRepository.findSongById(params.songId));
   const difficulty = createMemo(() => parseDifficulty(searchParams.difficulty));
@@ -36,29 +41,51 @@ export default function PlayRoute() {
     songRepository.loadChart(request.songId, request.difficulty),
   );
 
-  let audio: HTMLAudioElement | undefined;
   createEffect(() => {
-    if (!chart()) return;
+    if (chart.loading || !chart() || !chartRequest()) return;
     const currentSong = song();
     if (!currentSong) return;
-    audio?.pause();
-    audio = playAudio(currentSong.musicUrl);
+    const player = playAudio(currentSong.musicUrl);
+    const handleEnded = () => setAudioEnded(true);
+    const handleError = () => setAudioError("音频加载失败，请检查资源后重试。");
+    player.addEventListener("ended", handleEnded);
+    player.addEventListener("error", handleError);
+    setAudioEnded(false);
+    setAudioError(null);
+    setAudio(player);
+    onCleanup(() => {
+      player.pause();
+      player.removeEventListener("ended", handleEnded);
+      player.removeEventListener("error", handleError);
+      setAudio(undefined);
+    });
   });
 
   createEffect(() => {
     const isPaused = paused();
-    if (!audio) return;
+    const player = audio();
+    if (!player || audioEnded()) return;
     if (isPaused) {
-      audio.pause();
+      player.pause();
     } else {
-      void audio.play().catch(() => undefined);
+      void player
+        .play()
+        .then(() => setAudioError(null))
+        .catch(() => setAudioError("浏览器未开始播放音频，请点击继续播放。"));
     }
   });
 
   onCleanup(() => {
-    audio?.pause();
-    if (audio) audio.currentTime = 0;
+    audio()?.pause();
   });
+
+  function complete(cleared: boolean) {
+    audio()?.pause();
+    if (cleared) {
+      const request = chartRequest();
+      if (request) progress.markCleared(request.songId, request.difficulty);
+    }
+  }
 
   return (
     <main class="play-route">
@@ -92,12 +119,37 @@ export default function PlayRoute() {
                 song={song()!}
                 difficulty={difficulty()!}
                 paused={paused}
+                audioTimeMs={() => (audio()?.currentTime ?? 0) * 1000}
+                audioEnded={audioEnded}
                 togglePaused={() => setPaused((value) => !value)}
                 exit={() => navigate("/select")}
+                onComplete={complete}
               />
             )}
           </Show>
         </Show>
+      </Show>
+      <Show when={audioError()}>
+        {(message) => (
+          <div class="audio-error">
+            <p>{message()}</p>
+            <button
+              onClick={() => {
+                const player = audio();
+                if (player)
+                  void player
+                    .play()
+                    .then(() => setAudioError(null))
+                    .catch(() =>
+                      setAudioError("音频仍无法播放，请检查浏览器的音频权限。"),
+                    );
+              }}
+            >
+              继续播放
+            </button>
+            <button onClick={() => navigate("/select")}>返回选歌</button>
+          </div>
+        )}
       </Show>
     </main>
   );
